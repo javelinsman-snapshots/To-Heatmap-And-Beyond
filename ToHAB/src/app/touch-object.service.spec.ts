@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 
-import { TouchObjectService } from './touch-object.service';
+import { ToHABDataService } from './tohab-data.service';
 
-describe('TouchObjectService', () => {
+describe('ToHABDataService', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
 
   it('should be created', () => {
-    const service: TouchObjectService = TestBed.get(TouchObjectService);
+    const service: ToHABDataService = TestBed.get(ToHABDataService);
     expect(service).toBeTruthy();
   });
 });

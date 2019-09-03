@@ -1,8 +1,11 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { copyTouch, colorForTouch, ongoingTouchIndexById, log } from 'src/utils';
-import { TouchObjectService } from '../touch-object.service';
-import { ITouchObject } from '../touch-object';
+import { ToHABDataService } from '../tohab-data.service';
+import { ITouchObject, TouchRectangle } from '../touch-object';
 import * as d3 from 'd3';
+import { beep } from 'src/utils';
+import { SpeakingService } from '../speaking.service';
+import { ToHABData } from '../tohab-data';
 
 @Component({
   selector: 'app-touch-canvas',
@@ -11,12 +14,11 @@ import * as d3 from 'd3';
 })
 export class TouchCanvasComponent implements OnInit {
 
-  @Input() exampleId: number = 0;
-
   ongoingTouches = [];
 
   constructor(
-    private touchObjectService: TouchObjectService
+    private speakingService: SpeakingService,
+    private tohabDataService: ToHABDataService
   ) { }
 
   private touchObjects: ITouchObject[];
@@ -24,6 +26,50 @@ export class TouchCanvasComponent implements OnInit {
   private lastTouchedTimestamp = -1;
 
   canvas: any;
+
+  private makeRect(x, y, w, h, beepSpec = null, vibrationSpec = null, ttsSpec = null) {
+    return new TouchRectangle(
+        beep, x => this.speakingService.read(x),
+        x, y, w, h, beepSpec, vibrationSpec, ttsSpec
+      );
+  }
+
+  public getTouchObjects(tohab: ToHABData) {
+    const touchObjects = [];
+    const push = (x: ITouchObject) => touchObjects.push(x);
+
+    const xy_ = (x: number, y: number, range= {x: [0, 100], y: [0, 100]}) => {
+      const x_ = (x - range.x[0]) / (range.x[1] - range.x[0]) * window.innerWidth * 0.98;
+      const y_ = (y - range.y[0]) / (range.y[1] - range.y[0]) * window.innerHeight * 0.98;
+      return {x: x_, y: y_};
+    };
+
+    const xy = xy_;
+    const { rows, columns, values } = tohab;
+
+    const headerColor = 'rgb(153,217,234)';
+    const metaColor = 'rgb(185,122,87)';
+
+    for (let i = 0; i <= values.length; i++) {
+      for (let j = 0; j <= values[0].length; j++) {
+        const width = 100 / (values[0].length + 1);
+        const height = 100 / (values.length + 1);
+        const p = xy(width * (j + 0), height * (i + 0));
+        const p_ = xy(width * (j + 1), height * (i + 1));
+        console.log(width, height, p);
+        if (i == 0 && j == 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: metaColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
+        } else if (i == 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
+        } else if (j == 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
+        } else {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, pitch: values[i - 1][j - 1], duration: 150}));
+        }
+      }
+    }
+    return touchObjects;
+  }
 
   ngOnInit() {
     const el = document.getElementsByTagName('canvas')[0];
@@ -39,7 +85,8 @@ export class TouchCanvasComponent implements OnInit {
     canvas.attr('width', window.innerWidth * 0.98).attr('height', window.innerHeight * 0.98);
     this.canvas = canvas;
 
-    this.touchObjects = this.touchObjectService.getTouchObjects(this.exampleId);
+
+    this.touchObjects = this.getTouchObjects(this.tohabDataService.getHeatmapData());
     console.log(this.touchObjects);
     this.touchObjects.reverse();
     this.touchObjects.forEach((touchObject, ind) => {
