@@ -29,7 +29,7 @@ export class TouchCanvasComponent implements OnInit {
 
   private makeRect(x, y, w, h, beepSpec = null, vibrationSpec = null, ttsSpec = null) {
     return new TouchRectangle(
-        beep, x => this.speakingService.read(x),
+        beep, s => this.speakingService.read(s),
         x, y, w, h, beepSpec, vibrationSpec, ttsSpec
       );
   }
@@ -57,14 +57,22 @@ export class TouchCanvasComponent implements OnInit {
         const p = xy(width * (j + 0), height * (i + 0));
         const p_ = xy(width * (j + 1), height * (i + 1));
         console.log(width, height, p);
-        if (i == 0 && j == 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: metaColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
-        } else if (i == 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
-        } else if (j == 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150}));
+        if (i === 0 && j === 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
+            {volume: 10, color: metaColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
+          );
+        } else if (i === 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
+            {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
+          );
+        } else if (j === 0) {
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
+            {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
+          );
         } else {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y, {volume: 10, pitch: values[i - 1][j - 1], duration: 150}));
+          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
+            {volume: 10, pitch: values[i - 1][j - 1], duration: 150})
+          );
         }
       }
     }
@@ -99,7 +107,7 @@ export class TouchCanvasComponent implements OnInit {
           .style('stroke', _ => {
             if (this.touchingObjectIndex === ind) {
               return 'purple';
-            } else if(touchObject.style.stroke) {
+            } else if (touchObject.style.stroke) {
               return touchObject.style.stroke;
             }
             return null;
