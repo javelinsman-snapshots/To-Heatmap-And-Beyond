@@ -1,10 +1,8 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { ToHABDataService } from '../tohab-data.service';
-import { ITouchObject, TouchRectangle } from '../touch-object';
+import { TouchCell } from '../touch-object';
 import * as d3 from 'd3';
-import { beep } from 'src/utils';
-import { SpeakingService } from '../speaking.service';
-import { ToHABData } from '../tohab-data';
+import { HeatMapData } from '../tohab-data';
 import { InteractionManagerService } from '../interaction-manager.service';
 
 @Component({
@@ -14,69 +12,61 @@ import { InteractionManagerService } from '../interaction-manager.service';
 })
 export class TouchCanvasComponent implements OnInit {
 
+  @Output() sweep: EventEmitter<any> = new EventEmitter();
 
   constructor(
-    private speakingService: SpeakingService,
     private tohabDataService: ToHABDataService,
     private interactionManagerService: InteractionManagerService
   ) { }
 
-  private touchObjects: ITouchObject[];
-  private touchingObjectIndex = -1;
-  private lastTouchedTimestamp = -1;
+  private touchCells: TouchCell[];
+
+  heatmapData: HeatMapData;
 
   canvas: any;
 
-  private makeRect(x, y, w, h, beepSpec = null, vibrationSpec = null, ttsSpec = null) {
-    return new TouchRectangle(
-        beep, s => this.speakingService.read(s),
-        x, y, w, h, beepSpec, vibrationSpec, ttsSpec
-      );
-  }
+  public makeTouchCells() {
+    this.touchCells = [];
 
-  public getTouchObjects(tohab: ToHABData) {
-    const touchObjects = [];
-    const push = (x: ITouchObject) => touchObjects.push(x);
-
-    const xy_ = (x: number, y: number, range= {x: [0, 100], y: [0, 100]}) => {
+    const transformCoordinate = (x: number, y: number, range= {x: [0, 100], y: [0, 100]}) => {
       const x_ = (x - range.x[0]) / (range.x[1] - range.x[0]) * window.innerWidth * 0.98;
       const y_ = (y - range.y[0]) / (range.y[1] - range.y[0]) * window.innerHeight * 0.98;
       return {x: x_, y: y_};
     };
 
-    const xy = xy_;
-    const { rows, columns, values } = tohab;
-
-    const headerColor = 'rgb(153,217,234)';
-    const metaColor = 'rgb(185,122,87)';
+    const { values } = this.heatmapData;
 
     for (let i = 0; i <= values.length; i++) {
       for (let j = 0; j <= values[0].length; j++) {
         const width = 100 / (values[0].length + 1);
         const height = 100 / (values.length + 1);
-        const p = xy(width * (j + 0), height * (i + 0));
-        const p_ = xy(width * (j + 1), height * (i + 1));
+        const p = transformCoordinate(width * (j + 0), height * (i + 0));
+        const p_ = transformCoordinate(width * (j + 1), height * (i + 1));
         console.log(width, height, p);
         if (i === 0 && j === 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
-            {volume: 10, color: metaColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
-          );
+          this.touchCells.push(new TouchCell({
+            type: 'meta',
+            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
+          }));
         } else if (i === 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
-            {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
-          );
+          this.touchCells.push(new TouchCell({
+            type: 'col',
+            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
+          }));
         } else if (j === 0) {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
-            {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
-          );
+          this.touchCells.push(new TouchCell({
+            type: 'row',
+            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
+          }));
         } else {
-          push(this.makeRect(p.x, p.y, p_.x - p.x, p_.y - p.y,
-            {volume: 10, pitch: values[i - 1][j - 1], duration: 150})
-          );
+          this.touchCells.push(new TouchCell({
+            type: 'data',
+            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j,
+            value: values[i - 1][j - 1]
+          }));
         }
       }
     }
-    return touchObjects;
   }
 
   ngOnInit() {
@@ -87,60 +77,66 @@ export class TouchCanvasComponent implements OnInit {
     el.addEventListener('touchmove', this.interactionManagerService.handleMove.bind(this.interactionManagerService), false);
     console.log('initialized.');
 
-    this.interactionManagerService.on('sweep', this.handleTouchObjects.bind(this));
+    this.interactionManagerService.on('sweep', this.onSweep.bind(this));
+    this.tohabDataService.on('update-heatmap', this.updateHeatmap.bind(this));
+    this.tohabDataService.on('update-cursor', this.updateCursor.bind(this));
+    this.updateHeatmap();
+  }
 
+  updateCursor(evt = null) {
+    this.heatmapData = this.tohabDataService.getHeatmapData();
+    const { cursor } = this.heatmapData;
+    const cursorCell = this.touchCells.find(cell => cell.i === cursor.i && cell.j === cursor.j);
+
+    this.canvas.select('.cursor').remove();
+    this.canvas.append('rect')
+      .attr('x', cursorCell.x).attr('y', cursorCell.y)
+      .attr('width', cursorCell.w).attr('height', cursorCell.h)
+      .style('fill', 'transparent')
+      .style('stroke', 'purple')
+      .style('stroke-width', 5)
+      .classed('cursor', true);
+  }
+
+  updateHeatmap(evt = null) {
     const canvas = d3.select('svg');
     canvas.attr('width', window.innerWidth * 0.98).attr('height', window.innerHeight * 0.98);
     this.canvas = canvas;
 
-    this.touchObjects = this.getTouchObjects(this.tohabDataService.getHeatmapData());
-    console.log(this.touchObjects);
-    this.touchObjects.reverse();
-    this.touchObjects.forEach((touchObject, ind) => {
-      if (touchObject.type === 'circle') {
-        canvas.append('circle').attr('cx', touchObject.cx).attr('cy', touchObject.cy).attr('r', touchObject.r)
-          .style('fill', touchObject.style.fill);
-      } else if (touchObject.type === 'rectangle') {
-        canvas.append('rect').attr('x', touchObject.x).attr('y', touchObject.y).attr('width', touchObject.w).attr('height', touchObject.h)
-          .style('fill', touchObject.style.fill)
-          .style('stroke', _ => {
-            if (this.touchingObjectIndex === ind) {
-              return 'purple';
-            } else if (touchObject.style.stroke) {
-              return touchObject.style.stroke;
-            }
-            return null;
-          });
-      } else if (touchObject.type === 'line') {
-        canvas.append('line')
-          .attr('x1', touchObject.x1).attr('y1', touchObject.y1)
-          .attr('x2', touchObject.x2).attr('y2', touchObject.y2)
-          .style('stroke', touchObject.style.fill)
-          .style('stroke-width', 6);
-      }
-    });
-    this.touchObjects.reverse();
+    this.heatmapData = this.tohabDataService.getHeatmapData();
+    this.makeTouchCells();
+
+    const { valueRange } = this.heatmapData;
+
+    this.canvas.selectAll('rect').data(this.touchCells).enter().append('rect')
+      .attr('x', cell => cell.x)
+      .attr('y', cell => cell.y)
+      .attr('width', cell => cell.w)
+      .attr('height', cell => cell.h)
+      .style('fill', cell => ((cell: TouchCell) => {
+          if (cell.type === 'meta') {
+            const metaColor = 'rgb(185,122,87)';
+            return metaColor;
+          } else if (cell.type === 'col' || cell.type === 'row') {
+            const headerColor = 'rgb(153,217,234)';
+            return headerColor;
+          } else {
+            return d3.interpolateViridis(((cell.value as number) - valueRange.min) / (valueRange.max - valueRange.min));
+          }
+        })(cell));
+
+    this.updateCursor();
   }
 
-  handleTouchObjects(evt) {
+  onSweep(evt) {
     const x = evt.touchX, y = evt.touchY;
-    for (const touchObj of this.touchObjects) {
-      if (touchObj.collide(x, y)) {
-        const idx = this.touchObjects.indexOf(touchObj);
-        if (this.touchingObjectIndex !== idx && this.lastTouchedTimestamp + 100 < Date.now()) {
-          this.touchingObjectIndex = idx;
-          this.lastTouchedTimestamp = Date.now();
-          touchObj.notify();
-        }
-        this.canvas.select('.cursor').remove();
-        this.canvas.append('rect').attr('x', touchObj.x).attr('y', touchObj.y).attr('width', touchObj.w).attr('height', touchObj.h)
-          .style('fill', 'transparent')
-          .style('stroke', 'purple')
-          .style('stroke-width', 10)
-          .classed('cursor', true);
+    for (const cell of this.touchCells) {
+      if (cell.collide(x, y)) {
+        this.sweep.emit(cell);
         break;
       }
     }
+
   }
 
 }

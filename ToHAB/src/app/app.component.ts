@@ -1,11 +1,38 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { InteractionManagerService } from './interaction-manager.service';
+import { InteractionEvent } from './interaction-event';
+import { TouchCell } from './touch-object';
+import { HeatMapData } from './tohab-data';
+import { ToHABDataService } from './tohab-data.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'idac-touch';
 
+  constructor(
+    private tohabDataService: ToHABDataService,
+    private interactionManagerService: InteractionManagerService
+  ) { }
+
+  heatmapData: HeatMapData;
+  onInteractionSweep;
+
+  ngOnInit() {
+    const tds = this.tohabDataService;
+    this.onInteractionSweep = tds.onInteractionSweep.bind(tds);
+    this.interactionManagerService.on('swipe', tds.onInteractionSwipe.bind(tds));
+    this.interactionManagerService.on('lock', tds.onInteractionLock.bind(tds));
+    this.interactionManagerService.on('single-tap', tds.onInteractionSingleTap.bind(tds));
+    this.interactionManagerService.on('double-tap', tds.onInteractionDoubleTap.bind(tds));
+    this.interactionManagerService.on('three-finger-swipe', tds.onInteractionThreeFingerSwipe.bind(tds));
+    this.interactionManagerService.on('drag', tds.onInteractionDrag.bind(tds));
+    this.interactionManagerService.on('zoom', tds.onInteractionZoom.bind(tds));
+  }
+
+
 }
+
