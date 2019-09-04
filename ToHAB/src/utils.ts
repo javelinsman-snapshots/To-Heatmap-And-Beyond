@@ -25,13 +25,6 @@ export function ongoingTouchIndexById(ongoingTouches, idToFind) {
   return -1;    // not found
 }
 
-export function log(msg) {
-  return;
-  const p = document.getElementById('log');
-  p.innerHTML = msg + '\n' + p.innerHTML;
-}
-
-
 const audioContext = new AudioContext();
 
 export function beep(volume: number, frequency: number, duration: number) {
