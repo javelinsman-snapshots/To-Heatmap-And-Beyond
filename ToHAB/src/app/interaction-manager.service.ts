@@ -30,13 +30,14 @@ export class InteractionManagerService {
 
   bindElement(element: Element) {
     const mc = new Hammer.Manager(element);
-    const doubleTap = new Hammer.Tap({ event: 'double-tap', taps: 2 });
     const singleTap = new Hammer.Tap({ event: 'single-tap', taps: 1 });
+    const doubleTap = new Hammer.Tap({ event: 'double-tap', taps: 2 });
     doubleTap.recognizeWith(singleTap);
     singleTap.requireFailure(doubleTap);
     const tripleSwipe = new Hammer.Swipe({
-      event: 'tripleswipe',
-      pointers: 3
+      event: 'three-finger-swipe',
+      direction: Hammer.DIRECTION_HORIZONTAL,
+      pointers: 3,
     });
     const pan = new Hammer.Pan({ event: 'pan' , pointers: 1 });
     const doublePan = new Hammer.Pan({ event: 'doublepan', pointers: 2 });
@@ -94,6 +95,8 @@ export class InteractionManagerService {
         this.previousDoublePan = evt;
       }
     });
-    mc.on('tripleswipe', evt => alert('tripleswipe' + evt.direction));
+    mc.on('three-finger-swipe', evt => this.fireEvents('three-finger-swipe', {
+      direction: evt.direction === Hammer.DIRECTION_RIGHT ? 'right' : 'left'
+    }));
   }
 }

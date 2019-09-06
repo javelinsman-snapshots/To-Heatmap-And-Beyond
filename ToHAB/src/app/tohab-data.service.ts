@@ -176,14 +176,17 @@ export class ToHABDataService {
   }
   onInteractionLock(evt: InteractionEvent) {
     console.log('onInteraction' + 'Lock');
+    alert('lock' + evt.direction);
   }
   onInteractionSingleTap(cell: TouchCell) {
     this.onInteractionPan(cell);
   }
   onInteractionDoubleTap(evt: InteractionEvent) {
+    alert('double tap');
     console.log('onInteraction' + 'DoubleTap');
   }
   onInteractionThreeFingerSwipe(evt: InteractionEvent) {
+    alert('3 swipe');
     console.log('onInteraction' + 'ThreeFingerSwipe');
   }
   onInteractionDrag(evt: ToHABDragEvent) {
