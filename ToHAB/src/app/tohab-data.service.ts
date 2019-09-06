@@ -9,13 +9,15 @@ import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent } from './interaction
 })
 export class ToHABDataService {
 
-  heatmapData: HeatMapData;
+  tableData;
   callbacks;
+  dataPanelSize;
+  windowSizes;
 
   constructor() {
     this.callbacks = {};
 
-    this.heatmapData = {
+    this.tableData = {
       rows: rowHeaders,
       columns: colHeaders,
       values: dataCells,
@@ -28,6 +30,11 @@ export class ToHABDataService {
         lock: false,
         lock_i: -1,
         lock_j: -1,
+      },
+      window: {
+        i: 0,
+        j: 0,
+        windowIndex: 0
       }
     };
   }
@@ -44,20 +51,80 @@ export class ToHABDataService {
     this.callbacks[eventName].forEach(callback => callback(event));
   }
 
-  public getHeatmapData(): HeatMapData {
-    return this.heatmapData;
+  updateDataPanelSize(dataPanelSize) {
+    this.dataPanelSize = dataPanelSize;
+
+    const n = this.tableData.rows.length, m = this.tableData.columns.length;
+    let {w, h} = dataPanelSize;
+
+    const baseSize = w * n / h <= m ?
+      {w: Math.floor(w * n / h), h: n} : {w: m, h: Math.floor(h * m / w)};
+    console.log(baseSize);
+
+    this.windowSizes = [];
+    w = baseSize.w;
+    h = baseSize.h;
+    while (true) {
+      w = Math.max(1, Math.floor(w * 0.7));
+      h = Math.max(1, Math.floor(h * 0.7));
+      if (h <= n && w <= m) {
+        this.windowSizes.push({w, h});
+      }
+      if (Math.max(w, h) === 1) {
+        break;
+      }
+    }
+    this.windowSizes.reverse();
+    this.windowSizes.push(baseSize);
+    w = baseSize.w;
+    h = baseSize.h;
+    while (true) {
+      w = Math.min(m, Math.ceil(w / 0.7));
+      h = Math.min(n, Math.ceil(h / 0.7));
+      console.log(w, h);
+      if (h <= n && w <= m) {
+        this.windowSizes.push({w, h});
+      }
+      if (h === n && w === m) {
+        break;
+      }
+    }
+
+    console.log(this.windowSizes);
+    this.tableData.window.windowIndex = this.windowSizes.length - 1;
+  }
+
+  numRowCols() {
+    const { windowIndex } = this.tableData.window;
+    const { w, h } = this.windowSizes[windowIndex];
+    return {
+      numRows: h,
+      numCols: w
+    };
+  }
+
+  getCursorLocation() {
+    return this.tableData.cursor;
+  }
+
+  getValue(cell: TouchCell) {
+    return {
+      value: this.tableData.values[cell.i - 1][cell.j - 1],
+      rangeMin: this.tableData.valueRange.min,
+      rangeMax: this.tableData.valueRange.max
+    };
   }
 
   onInteractionPan(cell: TouchCell) {
-    const cursor = this.heatmapData.cursor;
+    const cursor = this.tableData.cursor;
     cursor.i = cell.i;
     cursor.j = cell.j;
     this.fireEvents('update-cursor', cursor);
   }
   onInteractionSwipe(evt: ToHABSwipeEvent) {
-    const cursor = this.heatmapData.cursor;
-    const numRows = this.heatmapData.values.length;
-    const numCols = this.heatmapData.values[0].length;
+    const cursor = this.tableData.cursor;
+    const numRows = this.tableData.values.length;
+    const numCols = this.tableData.values[0].length;
     if (evt.direction === 'left') {
       cursor.j = Math.max(0, cursor.j - 1);
     } else if (evt.direction === 'right') {
@@ -85,7 +152,13 @@ export class ToHABDataService {
     console.log('onInteraction' + 'Drag');
   }
   onInteractionZoom(evt: ToHABZoomEvent) {
-    console.log('onInteraction' + 'Zoom');
+    const window = this.tableData.window;
+    if (evt.direction === 'in') {
+      window.windowIndex = Math.max(0, window.windowIndex - 1);
+    } else if (evt.direction === 'out') {
+      window.windowIndex = Math.min(this.windowSizes.length - 1, window.windowIndex + 1);
+    }
+    this.fireEvents('update-heatmap', {});
   }
 
 

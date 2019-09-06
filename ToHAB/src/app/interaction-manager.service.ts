@@ -63,24 +63,33 @@ export class InteractionManagerService {
       }
     });
     mc.on('doublepan doublepanend', evt => {
-      if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.scale < 0.5) {
-        this.fireEvents('zoom', { direction: 'out' });
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.scale > 3) {
-        this.fireEvents('zoom', { direction: 'in' });
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityX > 0.3 &&
-          evt.offsetDirection === Hammer.DIRECTION_RIGHT && evt.distance > 10) {
-        alert('2 swipe right');
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityX < -0.3 &&
-          evt.offsetDirection === Hammer.DIRECTION_LEFT && evt.distance > 10) {
-        alert('2 swipe left');
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityY > 0.3 &&
-          evt.offsetDirection === Hammer.DIRECTION_DOWN && evt.distance > 10) {
-        alert('2 swipe down');
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityY < -0.3 &&
-          evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
-        alert('2 swipe up');
-      } else if (evt.deltaTime > 500) {
+      if (evt.deltaTime <= 1000) {
+        if (evt.type === 'doublepanend' && evt.scale < 0.5) {
+          this.fireEvents('zoom', { direction: 'out' });
+        } else if (evt.type === 'doublepanend' && evt.scale > 2) {
+          this.fireEvents('zoom', { direction: 'in' });
+        } else if (evt.type === 'doublepanend' && evt.velocityX > 0.3 &&
+            evt.offsetDirection === Hammer.DIRECTION_RIGHT && evt.distance > 10) {
+          alert('2 swipe right');
+        } else if (evt.type === 'doublepanend' && evt.velocityX < -0.3 &&
+            evt.offsetDirection === Hammer.DIRECTION_LEFT && evt.distance > 10) {
+          alert('2 swipe left');
+        } else if (evt.type === 'doublepanend' && evt.velocityY > 0.3 &&
+            evt.offsetDirection === Hammer.DIRECTION_DOWN && evt.distance > 10) {
+          alert('2 swipe down');
+        } else if (evt.type === 'doublepanend' && evt.velocityY < -0.3 &&
+            evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
+          alert('2 swipe up');
+        }
+      } else if (evt.deltaTime > 1000) {
+        /*
+        this.fireEvents('drag', {
+          currentCenter: evt.center,
+        })
+        if (evt.type === 'doublepanend' && evt.offsetDirection === Hammer.DIRECTION_RIGHT && evt.distance > 30)
         console.log('drag');
+        }
+      */
       }
     });
     mc.on('tripleswipe', evt => alert('tripleswipe' + evt.direction));
