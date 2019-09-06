@@ -67,7 +67,7 @@ export class InteractionManagerService {
       this.previousDoublePan = evt;
     });
     mc.on('doublepan doublepanend', evt => {
-      if (evt.deltaTime <= 1000) {
+      if (evt.deltaTime <= 700) {
         if (evt.type === 'doublepanend' && evt.scale < 0.5) {
           this.fireEvents('zoom', { direction: 'out' });
         } else if (evt.type === 'doublepanend' && evt.scale > 2) {
@@ -85,7 +85,7 @@ export class InteractionManagerService {
             evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
           this.fireEvents('lock', {direction: 'up'});
         }
-      } else if (evt.deltaTime > 1000) {
+      } else if (evt.deltaTime > 700) {
         this.fireEvents('drag', {
           dx: evt.center.x - this.previousDoublePan.center.x,
           dy: evt.center.y - this.previousDoublePan.center.y,
