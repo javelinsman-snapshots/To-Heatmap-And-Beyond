@@ -8,3 +8,9 @@ export class ToHABSwipeEvent {
 export class ToHABZoomEvent {
   direction: 'out' | 'in';
 }
+
+export class ToHABDragEvent {
+  dx: number;
+  dy: number;
+  end: boolean;
+}
