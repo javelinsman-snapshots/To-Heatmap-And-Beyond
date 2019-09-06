@@ -9,6 +9,17 @@ export class ToHABZoomEvent {
   direction: 'out' | 'in';
 }
 
+export class ToHABLockEvent {
+  direction: 'left' | 'right' | 'down' | 'up';
+}
+
+export class ToHABModeChangeEvent {
+  direction: 'left' | 'right';
+}
+
+
+
+
 export class ToHABDragEvent {
   dx: number;
   dy: number;
