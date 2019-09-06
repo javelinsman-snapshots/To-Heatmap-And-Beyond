@@ -12,12 +12,10 @@ import { InteractionManagerService } from '../interaction-manager.service';
 })
 export class TouchCanvasComponent implements OnInit {
 
-  @Output() sweep: EventEmitter<any> = new EventEmitter();
-
   constructor(
     private tohabDataService: ToHABDataService,
     private interactionManagerService: InteractionManagerService
-  ) { }
+  ) {}
 
   private touchCells: TouchCell[];
 
@@ -28,10 +26,20 @@ export class TouchCanvasComponent implements OnInit {
   public makeTouchCells() {
     this.touchCells = [];
 
-    const transformCoordinate = (x: number, y: number, range= {x: [0, 100], y: [0, 100]}) => {
-      const x_ = (x - range.x[0]) / (range.x[1] - range.x[0]) * window.innerWidth * 0.98;
-      const y_ = (y - range.y[0]) / (range.y[1] - range.y[0]) * window.innerHeight * 0.98;
-      return {x: x_, y: y_};
+    const transformCoordinate = (
+      x: number,
+      y: number,
+      range = { x: [0, 100], y: [0, 100] }
+    ) => {
+      const x_ =
+        ((x - range.x[0]) / (range.x[1] - range.x[0])) *
+        window.innerWidth *
+        0.98;
+      const y_ =
+        ((y - range.y[0]) / (range.y[1] - range.y[0])) *
+        window.innerHeight *
+        0.98;
+      return { x: x_, y: y_ };
     };
 
     const { values } = this.heatmapData;
@@ -44,54 +52,94 @@ export class TouchCanvasComponent implements OnInit {
         const p_ = transformCoordinate(width * (j + 1), height * (i + 1));
         console.log(width, height, p);
         if (i === 0 && j === 0) {
-          this.touchCells.push(new TouchCell({
-            type: 'meta',
-            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
-          }));
+          this.touchCells.push(
+            new TouchCell({
+              type: 'meta',
+              x: p.x,
+              y: p.y,
+              w: p_.x - p.x,
+              h: p_.y - p.y,
+              i,
+              j
+            })
+          );
         } else if (i === 0) {
-          this.touchCells.push(new TouchCell({
-            type: 'col',
-            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
-          }));
+          this.touchCells.push(
+            new TouchCell({
+              type: 'col',
+              x: p.x,
+              y: p.y,
+              w: p_.x - p.x,
+              h: p_.y - p.y,
+              i,
+              j
+            })
+          );
         } else if (j === 0) {
-          this.touchCells.push(new TouchCell({
-            type: 'row',
-            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j
-          }));
+          this.touchCells.push(
+            new TouchCell({
+              type: 'row',
+              x: p.x,
+              y: p.y,
+              w: p_.x - p.x,
+              h: p_.y - p.y,
+              i,
+              j
+            })
+          );
         } else {
-          this.touchCells.push(new TouchCell({
-            type: 'data',
-            x: p.x, y: p.y, w: p_.x - p.x, h: p_.y - p.y, i, j,
-            value: values[i - 1][j - 1]
-          }));
+          this.touchCells.push(
+            new TouchCell({
+              type: 'data',
+              x: p.x,
+              y: p.y,
+              w: p_.x - p.x,
+              h: p_.y - p.y,
+              i,
+              j,
+              value: values[i - 1][j - 1]
+            })
+          );
         }
       }
     }
   }
 
   ngOnInit() {
-    const el = document.getElementsByTagName('canvas')[0];
-    el.addEventListener('touchstart', this.interactionManagerService.handleStart.bind(this.interactionManagerService), false);
-    el.addEventListener('touchend', this.interactionManagerService.handleEnd.bind(this.interactionManagerService), false);
-    el.addEventListener('touchcancel', this.interactionManagerService.handleCancel.bind(this.interactionManagerService), false);
-    el.addEventListener('touchmove', this.interactionManagerService.handleMove.bind(this.interactionManagerService), false);
-    console.log('initialized.');
+    const canvasElement = document.getElementsByTagName('canvas')[0];
+    this.interactionManagerService.bindElement(canvasElement);
 
-    this.interactionManagerService.on('sweep', this.onSweep.bind(this));
+    this.interactionManagerService.on('pan', this.onPan.bind(this));
     this.tohabDataService.on('update-heatmap', this.updateHeatmap.bind(this));
     this.tohabDataService.on('update-cursor', this.updateCursor.bind(this));
     this.updateHeatmap();
   }
 
+  onPan(evt) {
+    const { x, y } = evt;
+    for (const cell of this.touchCells) {
+      if (cell.collide(x, y)) {
+        this.tohabDataService.onInteractionPan(cell);
+        break;
+      }
+    }
+  }
+
+
   updateCursor(evt = null) {
     this.heatmapData = this.tohabDataService.getHeatmapData();
     const { cursor } = this.heatmapData;
-    const cursorCell = this.touchCells.find(cell => cell.i === cursor.i && cell.j === cursor.j);
+    const cursorCell = this.touchCells.find(
+      cell => cell.i === cursor.i && cell.j === cursor.j
+    );
 
     this.canvas.select('.cursor').remove();
-    this.canvas.append('rect')
-      .attr('x', cursorCell.x).attr('y', cursorCell.y)
-      .attr('width', cursorCell.w).attr('height', cursorCell.h)
+    this.canvas
+      .append('rect')
+      .attr('x', cursorCell.x)
+      .attr('y', cursorCell.y)
+      .attr('width', cursorCell.w)
+      .attr('height', cursorCell.h)
       .style('fill', 'transparent')
       .style('stroke', 'purple')
       .style('stroke-width', 5)
@@ -100,7 +148,9 @@ export class TouchCanvasComponent implements OnInit {
 
   updateHeatmap(evt = null) {
     const canvas = d3.select('svg');
-    canvas.attr('width', window.innerWidth * 0.98).attr('height', window.innerHeight * 0.98);
+    canvas
+      .attr('width', window.innerWidth * 0.98)
+      .attr('height', window.innerHeight * 0.98);
     this.canvas = canvas;
 
     this.heatmapData = this.tohabDataService.getHeatmapData();
@@ -108,12 +158,17 @@ export class TouchCanvasComponent implements OnInit {
 
     const { valueRange } = this.heatmapData;
 
-    this.canvas.selectAll('rect').data(this.touchCells).enter().append('rect')
+    this.canvas
+      .selectAll('rect')
+      .data(this.touchCells)
+      .enter()
+      .append('rect')
       .attr('x', cell => cell.x)
       .attr('y', cell => cell.y)
       .attr('width', cell => cell.w)
       .attr('height', cell => cell.h)
-      .style('fill', cell => ((cell: TouchCell) => {
+      .style('fill', cell =>
+        ((cell: TouchCell) => {
           if (cell.type === 'meta') {
             const metaColor = 'rgb(185,122,87)';
             return metaColor;
@@ -121,22 +176,15 @@ export class TouchCanvasComponent implements OnInit {
             const headerColor = 'rgb(153,217,234)';
             return headerColor;
           } else {
-            return d3.interpolateViridis(((cell.value as number) - valueRange.min) / (valueRange.max - valueRange.min));
+            return d3.interpolateViridis(
+              ((cell.value as number) - valueRange.min) /
+                (valueRange.max - valueRange.min)
+            );
           }
-        })(cell));
+        })(cell)
+      );
 
     this.updateCursor();
-  }
-
-  onSweep(evt) {
-    const x = evt.touchX, y = evt.touchY;
-    for (const cell of this.touchCells) {
-      if (cell.collide(x, y)) {
-        this.sweep.emit(cell);
-        break;
-      }
-    }
-
   }
 
 }

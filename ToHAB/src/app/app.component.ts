@@ -19,11 +19,9 @@ export class AppComponent implements OnInit {
   ) { }
 
   heatmapData: HeatMapData;
-  onInteractionSweep;
 
   ngOnInit() {
     const tds = this.tohabDataService;
-    this.onInteractionSweep = tds.onInteractionSweep.bind(tds);
     this.interactionManagerService.on('swipe', tds.onInteractionSwipe.bind(tds));
     this.interactionManagerService.on('lock', tds.onInteractionLock.bind(tds));
     this.interactionManagerService.on('single-tap', tds.onInteractionSingleTap.bind(tds));
