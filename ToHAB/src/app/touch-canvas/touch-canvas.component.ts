@@ -110,6 +110,7 @@ export class TouchCanvasComponent implements OnInit {
     this.interactionManagerService.bindElement(canvasElement);
 
     this.interactionManagerService.on('pan', this.onPan.bind(this));
+    this.interactionManagerService.on('single-tap', this.onSingleTap.bind(this));
     this.tohabDataService.on('update-heatmap', this.updateHeatmap.bind(this));
     this.tohabDataService.on('update-cursor', this.updateCursor.bind(this));
     this.updateHeatmap();
@@ -120,6 +121,16 @@ export class TouchCanvasComponent implements OnInit {
     for (const cell of this.touchCells) {
       if (cell.collide(x, y)) {
         this.tohabDataService.onInteractionPan(cell);
+        break;
+      }
+    }
+  }
+
+  onSingleTap(evt) {
+    const { x, y } = evt;
+    for (const cell of this.touchCells) {
+      if (cell.collide(x, y)) {
+        this.tohabDataService.onInteractionSingleTap(cell);
         break;
       }
     }

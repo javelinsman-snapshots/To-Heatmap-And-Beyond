@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { dataCells, colHeaders, rowHeaders } from './mock-data';
 import { HeatMapData } from './tohab-data';
 import { TouchCell } from './touch-object';
-import { InteractionEvent, ToHABSwipeEvent } from './interaction-event';
+import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent } from './interaction-event';
 
 @Injectable({
   providedIn: 'root'
@@ -72,8 +72,8 @@ export class ToHABDataService {
   onInteractionLock(evt: InteractionEvent) {
     console.log('onInteraction' + 'Lock');
   }
-  onInteractionSingleTap(evt: InteractionEvent) {
-    console.log('onInteraction' + 'SingleTap');
+  onInteractionSingleTap(cell: TouchCell) {
+    this.onInteractionPan(cell);
   }
   onInteractionDoubleTap(evt: InteractionEvent) {
     console.log('onInteraction' + 'DoubleTap');
@@ -84,7 +84,7 @@ export class ToHABDataService {
   onInteractionDrag(evt: InteractionEvent) {
     console.log('onInteraction' + 'Drag');
   }
-  onInteractionZoom(evt: InteractionEvent) {
+  onInteractionZoom(evt: ToHABZoomEvent) {
     console.log('onInteraction' + 'Zoom');
   }
 

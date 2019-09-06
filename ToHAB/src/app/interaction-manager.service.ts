@@ -28,22 +28,23 @@ export class InteractionManagerService {
 
   bindElement(element: Element) {
     const mc = new Hammer.Manager(element);
-    const doubleTap = new Hammer.Tap({ event: 'doubletap', taps: 2 });
-    const singleTap = new Hammer.Tap({ event: 'tap', taps: 1 });
+    const doubleTap = new Hammer.Tap({ event: 'double-tap', taps: 2 });
+    const singleTap = new Hammer.Tap({ event: 'single-tap', taps: 1 });
     doubleTap.recognizeWith(singleTap);
     singleTap.requireFailure(doubleTap);
     const tripleSwipe = new Hammer.Swipe({
       event: 'tripleswipe',
       pointers: 3
     });
-    const pan = new Hammer.Pan({ event: 'pan' });
+    const pan = new Hammer.Pan({ event: 'pan' , pointers: 1 });
     const doublePan = new Hammer.Pan({ event: 'doublepan', pointers: 2 });
-    mc.add([doubleTap, singleTap, pan, doublePan, tripleSwipe]);
-    mc.on('doubletap', evt => alert('doubletap' + evt.direction));
-    mc.on('tap', evt => alert('tap' + evt.direction));
-    mc.on('swipe', evt => alert('swipe' + evt.direction));
-    mc.on('tripleswipe', evt => alert('tripleswipe' + evt.direction));
+    mc.add([doubleTap, singleTap, doublePan, pan, tripleSwipe]);
+    mc.on('double-tap', () => this.fireEvents('double-tap', {}));
+    mc.on('single-tap', evt => this.fireEvents('single-tap', evt.center));
     mc.on('pan panend', evt => {
+      if (evt.maxPointers > 1) {
+        return;
+      }
       if (evt.type === 'panend' && evt.deltaTime <= 500 && evt.velocityX < -0.3 &&
           evt.offsetDirection === Hammer.DIRECTION_LEFT && evt.distance > 10) {
         this.fireEvents('swipe', {direction: 'left'});
@@ -57,17 +58,32 @@ export class InteractionManagerService {
           evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
         this.fireEvents('swipe', {direction: 'up'});
       } else if (evt.deltaTime > 500) {
+        console.log(evt);
         this.fireEvents('pan', evt.center);
       }
     });
     mc.on('doublepan doublepanend', evt => {
-      if (evt.type === 'doublepanend' && evt.deltaTime <= 1000 && evt.scale < 0.5) {
-        alert('zoom out');
-      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 1000 && evt.scale > 3) {
-        alert('zoom in');
+      if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.scale < 0.5) {
+        this.fireEvents('zoom', { direction: 'out' });
+      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.scale > 3) {
+        this.fireEvents('zoom', { direction: 'in' });
+      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityX > 0.3 &&
+          evt.offsetDirection === Hammer.DIRECTION_RIGHT && evt.distance > 10) {
+        alert('2 swipe right');
+      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityX < -0.3 &&
+          evt.offsetDirection === Hammer.DIRECTION_LEFT && evt.distance > 10) {
+        alert('2 swipe left');
+      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityY > 0.3 &&
+          evt.offsetDirection === Hammer.DIRECTION_DOWN && evt.distance > 10) {
+        alert('2 swipe down');
+      } else if (evt.type === 'doublepanend' && evt.deltaTime <= 500 && evt.velocityY < -0.3 &&
+          evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
+        alert('2 swipe up');
+      } else if (evt.deltaTime > 500) {
+        console.log('drag');
       }
     });
-
+    mc.on('tripleswipe', evt => alert('tripleswipe' + evt.direction));
   }
 
   handleStart(evt) {
