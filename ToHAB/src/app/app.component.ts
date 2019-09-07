@@ -1,8 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { InteractionManagerService } from './interaction-manager.service';
-import { InteractionEvent } from './interaction-event';
-import { TouchCell } from './touch-object';
-import { HeatMapData } from './tohab-data';
 import { ToHABDataService } from './tohab-data.service';
 
 @Component({
@@ -17,8 +14,6 @@ export class AppComponent implements OnInit {
     private tohabDataService: ToHABDataService,
     private interactionManagerService: InteractionManagerService
   ) { }
-
-  heatmapData: HeatMapData;
 
   ngOnInit() {
     const tds = this.tohabDataService;
