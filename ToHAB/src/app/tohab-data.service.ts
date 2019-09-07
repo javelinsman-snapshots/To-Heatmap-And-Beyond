@@ -1,43 +1,28 @@
 import { Injectable } from '@angular/core';
 import { dataCells, colHeaders, rowHeaders } from './mock-data';
-import { HeatMapData } from './tohab-data';
 import { TouchCell } from './touch-object';
 import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent, ToHABDragEvent, ToHABModeChangeEvent, ToHABLockEvent } from './interaction-event';
 import { SpeakingService } from './speaking.service';
+import { ToHABData } from './tohab-data';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToHABDataService {
 
+  tohabData: ToHABData;
+  callbacks;
+  dataPanelSize;
+  dragBuffer;
+  minimumCellSize = 30;
+  previouslyPannedCell = null;
+
+
   constructor(
     private speakingService: SpeakingService
   ) {
     this.callbacks = {};
-
-    this.tableData = {
-      rows: rowHeaders,
-      columns: colHeaders,
-      values: dataCells,
-      valueRange: {
-        min: 0,
-        max: 1100
-      },
-      cursor: {
-        i: 0, j: 0,
-        lock: false,
-        lock_i: -1,
-        lock_j: -1,
-      },
-      window: {
-        i: 0,
-        j: 0,
-        windowIndex: 0,
-        windowSizes: []
-      },
-      mode: 'primary'
-    };
-
+    this.tohabData = new ToHABData();
     this.dragBuffer = {
       dx: 0,
       dy: 0
@@ -45,31 +30,34 @@ export class ToHABDataService {
 
   }
 
-  get cellSize() {
-    const window = this.tableData.window;
-    const currentWindow = window.windowSizes[window.windowIndex];
-    const {w, h} = this.dataPanelSize;
+  get numCells() {
     return {
-      w: w / currentWindow.w,
-      h: h / currentWindow.h
+      n: this.tohabData.rows.length,
+      m: this.tohabData.columns.length
     };
   }
 
-  get navigationMode() {
-    return this.tableData.mode;
+  get currentWindowSize() {
+    const window = this.tohabData.window;
+    return window.windowSizes[window.windowIndex];
   }
 
-  set navigationMode(s: string) {
-    this.tableData.mode = s;
+
+  get cellSize() {
+    const {w, h} = this.dataPanelSize;
+    return {
+      cellW: w / this.currentWindowSize.w,
+      cellH: h / this.currentWindowSize.h
+    };
   }
 
-  tableData;
-  callbacks;
-  dataPanelSize;
-  dragBuffer;
-  minimumCellSize = 30;
-
-  previouslyPannedCell = null;
+  get binSize() {
+    const {cellW, cellH} = this.cellSize;
+    return {
+      binW: Math.ceil(this.minimumCellSize / cellW),
+      binH: Math.ceil(this.minimumCellSize / cellH)
+    };
+  }
 
   on(eventName: string, callback) {
     if (this.callbacks[eventName]) {
@@ -83,20 +71,20 @@ export class ToHABDataService {
     this.callbacks[eventName].forEach(callback => callback(event));
   }
 
-
   moveWindow(direction, by) {
-    const window = this.tableData.window;
-    const n = this.tableData.rows.length, m = this.tableData.columns.length;
+    const window = this.tohabData.window;
+    const {n, m} = this.numCells;
     const {w, h} = window.windowSizes[window.windowIndex];
+    const {binW, binH} = this.binSize;
 
-    if (direction === 'left') {
-      window.j = Math.max(window.j - by, 0);
-    } else if (direction === 'right') {
-      window.j = Math.min(window.j + by, m - w);
-    } else if (direction === 'up') {
-      window.i = Math.max(window.i - by, 0);
-    } else if (direction === 'down') {
-      window.i = Math.min(window.j + by, n - h);
+    if (direction === 'left' && window.j - by * binW >= 0) {
+      window.j -= by * binW;
+    } else if (direction === 'right' && window.j + by * binW < m) {
+      window.j += by * binW;
+    } else if (direction === 'up' && window.i - by * binH >= 0) {
+      window.i -= by * binH;
+    } else if (direction === 'down' && window.i + by * binH < n) {
+      window.i += by * binH;
     }
 
     this.fireEvents('update-values', {});
@@ -105,14 +93,14 @@ export class ToHABDataService {
   updateDataPanelSize(dataPanelSize) {
     this.dataPanelSize = dataPanelSize;
 
-    const n = this.tableData.rows.length, m = this.tableData.columns.length;
+    const {n, m} = this.numCells;
     let {w, h} = dataPanelSize;
 
     const baseSize = w * n / h <= m ?
       {w: Math.floor(w * n / h), h: n} : {w: m, h: Math.floor(h * m / w)};
     console.log(baseSize);
 
-    const window = this.tableData.window;
+    const window = this.tohabData.window;
     window.windowSizes = [];
     w = baseSize.w;
     h = baseSize.h;
@@ -147,33 +135,65 @@ export class ToHABDataService {
   }
 
   numRowCols() {
-    const window = this.tableData.window;
-    const { w, h } = window.windowSizes[window.windowIndex];
+    const { n, m } = this.numCells;
+    const { binW, binH } = this.binSize;
     return {
-      numRows: h,
-      numCols: w
+      numRows: Math.ceil(n / binH),
+      numCols: Math.ceil(m / binW)
+    };
+  }
+
+  indexOfBinnedCell({i, j}) {
+    const {binW, binH} = this.binSize;
+    return {
+      i: Math.floor(i / binH),
+      j: Math.floor(j / binW)
     };
   }
 
   getCursorLocation() {
-    return this.tableData.cursor;
+    const cursor = this.tohabData.cursor;
+    const window = this.tohabData.window;
+    const binnedCursor = this.indexOfBinnedCell(cursor);
+    const binnedWindowOrigin = this.indexOfBinnedCell(window);
+    console.log('getcursorloc', cursor);
+    console.log({cursor, binnedCursor, binnedWindowOrigin});
+    return {
+      i: cursor.i === 0 ? 0 : binnedCursor.i - binnedWindowOrigin.i,
+      j: cursor.j === 0 ? 0 : binnedCursor.j - binnedWindowOrigin.j
+    };
   }
 
   getValue(cell: TouchCell) {
-    const window = this.tableData.window;
+    const window = this.tohabData.window;
+    const {binW, binH} = this.binSize;
     if (cell.type === 'data') {
+      const i = window.i + (cell.i - 1) * binH;
+      const j = window.j + (cell.j - 1) * binW;
+      const values =  this.tohabData.values.slice(i, i + binH).map(row => row.slice(j, j + binW));
       return {
-        value: this.tableData.values[window.i + cell.i - 1][window.j + cell.j - 1],
-        rangeMin: this.tableData.valueRange.min,
-        rangeMax: this.tableData.valueRange.max
+        value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
+        range: {
+          i, j, w: values[0].length, h: values.length
+        },
+        valueDomain: {
+          min: this.tohabData.valueDomain.min,
+          max: this.tohabData.valueDomain.max
+        }
       };
     } else if (cell.type === 'row') {
+      const i = window.i + (cell.i - 1) * binH;
+      const values = this.tohabData.rows.slice(i, i + binH);
       return {
-        value: this.tableData.rows[cell.i - 1]
+        value: values.join(', '),
+        range: { i, h: values.length }
       };
     } else if (cell.type === 'col') {
+      const j = window.j + (cell.j - 1) * binW;
+      const values = this.tohabData.columns.slice(j, j + binW);
       return {
-        value: this.tableData.columns[cell.j - 1]
+        value: values.join(', '),
+        range: { j, w: values[0].length }
       };
     } else if (cell.type === 'meta') {
       return {
@@ -181,54 +201,79 @@ export class ToHABDataService {
       };
     }
   }
+
   onInteractionPan(cell: TouchCell) {
     if (cell === this.previouslyPannedCell) {
       return;
     }
     this.previouslyPannedCell = cell;
-    const cursor = this.tableData.cursor;
-    cursor.i = cell.i;
-    cursor.j = cell.j;
+
+    const window = this.tohabData.window;
+    const {binW, binH} = this.binSize;
+    const i = window.i + (cell.i - 1) * binH;
+    const j = window.j + (cell.j - 1) * binW;
+
+    console.log(cell, i, j);
+
+    const cursor = this.tohabData.cursor;
+
+    if (cell.type === 'meta') {
+      cursor.i = 0;
+      cursor.j = 0;
+    } else if (cell.type === 'row') {
+      cursor.i = i;
+      cursor.j = 0;
+    } else if (cell.type === 'col') {
+      cursor.i = 0;
+      cursor.j = j;
+    } else {
+      cursor.i = i;
+      cursor.j = j;
+    }
+
     this.fireEvents('update-cursor', cursor);
-
     this.retrieveCellOutput(cell);
-
   }
+
   onInteractionSwipe(evt: ToHABSwipeEvent) {
-    const cursor = this.tableData.cursor;
-    const numRows = this.tableData.values.length;
-    const numCols = this.tableData.values[0].length;
-    if (evt.direction === 'left') {
-      cursor.j = Math.max(0, cursor.j - 1);
-    } else if (evt.direction === 'right') {
-      cursor.j = Math.min(numCols - 1, cursor.j + 1);
-    } else if (evt.direction === 'down') {
-      cursor.i = Math.min(numRows - 1, cursor.i + 1);
-    } else if (evt.direction === 'up') {
-      cursor.i = Math.max(0, cursor.i - 1);
+    const cursor = this.tohabData.cursor;
+    const {binW, binH} = this.binSize;
+    const {n, m} = this.numCells;
+    if (evt.direction === 'left' && cursor.j - binW >= 0) {
+      cursor.j -= binW;
+    } else if (evt.direction === 'right' && cursor.j + binW < m) {
+      cursor.j += binW;
+    } else if (evt.direction === 'down' && cursor.i + binH < n) {
+      cursor.i += binH;
+    } else if (evt.direction === 'up' && cursor.i - binH >= 0) {
+      cursor.i -= binW;
     }
     this.fireEvents('update-cursor', cursor);
   }
+
   onInteractionLock(evt: ToHABLockEvent) {
     console.log('onInteraction' + 'Lock');
   }
+
   onInteractionSingleTap(cell: TouchCell) {
     this.onInteractionPan(cell);
   }
+
   onInteractionDoubleTap(evt: InteractionEvent) {
     alert('double tap');
     console.log('onInteraction' + 'DoubleTap');
   }
+
   onInteractionThreeFingerSwipe(evt: ToHABModeChangeEvent) {
-    this.navigationMode = this.navigationMode === 'primary' ? 'secondary' : 'primary';
+    this.tohabData.navigationMode = this.tohabData.navigationMode === 'primary' ? 'secondary' : 'primary';
     this.speakingService.read('Navigation mode is changed.');
   }
+
   onInteractionDrag(evt: ToHABDragEvent) {
     console.log(this.dragBuffer);
     this.dragBuffer.dx += evt.dx;
     this.dragBuffer.dy += evt.dy;
-    const cellW = this.cellSize.w;
-    const cellH = this.cellSize.h;
+    const {cellW, cellH} = this.cellSize;
     if (this.dragBuffer.dx < -cellW) {
       this.moveWindow('right', Math.floor(-this.dragBuffer.dx / cellW));
       this.dragBuffer.dx = 0;
@@ -250,13 +295,18 @@ export class ToHABDataService {
       };
     }
   }
+
   onInteractionZoom(evt: ToHABZoomEvent) {
-    const window = this.tableData.window;
+    const window = this.tohabData.window;
     if (evt.direction === 'in') {
       window.windowIndex = Math.max(0, window.windowIndex - 1);
     } else if (evt.direction === 'out') {
       window.windowIndex = Math.min(window.windowSizes.length - 1, window.windowIndex + 1);
     }
+    const {binW, binH} = this.binSize;
+    window.i -= window.i % binH;
+    window.j -= window.j % binW;
+
     this.fireEvents('update-heatmap', {});
   }
 
@@ -264,10 +314,10 @@ export class ToHABDataService {
   retrieveCellOutput(cell: TouchCell) {
     const value = this.getValue(cell).value;
     window.navigator.vibrate(1000);
-    if (this.navigationMode === 'primary') {
+    if (this.tohabData.navigationMode === 'primary') {
       this.speakingService.read(value + '');
     } else {
-      this.speakingService.beep(10, cell.type === 'data' ? value : 150, 150);
+      this.speakingService.beep(10, cell.type === 'data' ? value as number : 150, 150);
     }
   }
 

@@ -2,7 +2,6 @@ import { Component, OnInit, Input, Output, EventEmitter, AfterViewInit } from '@
 import { ToHABDataService } from '../tohab-data.service';
 import { TouchCell } from '../touch-object';
 import * as d3 from 'd3';
-import { HeatMapData } from '../tohab-data';
 import { InteractionManagerService } from '../interaction-manager.service';
 
 @Component({
@@ -142,9 +141,9 @@ export class TouchCanvasComponent implements OnInit, AfterViewInit {
       const headerColor = 'rgb(153,217,234)';
       return headerColor;
     } else {
-      const { value, rangeMin, rangeMax } = this.tohabDataService.getValue(cell);
+      const { value, valueDomain } = this.tohabDataService.getValue(cell);
       return d3.interpolateViridis(
-          ((value as number) - rangeMin) / (rangeMax - rangeMin)
+          ((value as number) - valueDomain.min) / (valueDomain.max - valueDomain.min)
         );
     }
   }
