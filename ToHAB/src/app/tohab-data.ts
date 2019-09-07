@@ -91,16 +91,17 @@ export class WindowCursor {
   moveWindow(direction, by) {
     const {n, m} = this.root.numCells;
     const {binW, binH} = this.root.binSize;
-    const nMax = Math.floor((n - 1) / binH);
-    const mMax = Math.floor((m - 1) / binW);
+    const nMax = (n - 1) - (n - 1) % binH + binH;
+    const mMax = (m - 1) - (m - 1) % binW + binW;
+    const {w, h} = this.root.currentWindowSize;
     if (direction === 'left') {
       this.window.j = Math.max(0, this.window.j - by * binW);
     } else if (direction === 'right') {
-      this.window.j = Math.min(mMax, this.window.j + by * binW);
+      this.window.j = Math.min(mMax - w, this.window.j + by * binW);
     } else if (direction === 'up') {
       this.window.i = Math.max(0, this.window.i - by * binH);
-    } else if (direction === 'down' && this.window.i + by * binH < n) {
-      this.window.i = Math.min(nMax, this.window.i + by * binH);
+    } else if (direction === 'down') {
+      this.window.i = Math.min(nMax - h, this.window.i + by * binH);
     }
   }
 
@@ -168,9 +169,9 @@ export class ToHABData {
   navigationMode: 'primary' | 'secondary';
 
   constructor() {
-    this.rows = rowHeaders;
+    this.rows = rowHeaders.concat(rowHeaders).concat(rowHeaders);
     this.columns = colHeaders;
-    this.values = dataCells;
+    this.values = dataCells.concat(dataCells).concat(dataCells);
     this.valueDomain = { min: 0, max: 1100 };
     this.windowCursor = new WindowCursor(this);
     this.navigationMode = 'primary';
@@ -242,6 +243,7 @@ export class ToHABData {
       const i = window.i + (cell.i - 1) * binH;
       const j = window.j + (cell.j - 1) * binW;
       const values =  this.values.slice(i, i + binH).map(row => row.slice(j, j + binW));
+      console.log({window, cell, binH, binW, i, j, values});
       return {
         value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
         range: {
