@@ -29,6 +29,8 @@ export class WindowCursor {
   dataPanelSize: WidthHeight;
   minimumCellSize: number;
 
+  // cursor is 0-based with headers
+  // window is 0-based without headers
   constructor(private root: ToHABData) {
     this.cursor = {
       i: 0, j: 0,
@@ -48,21 +50,21 @@ export class WindowCursor {
 
   moveCursorToTouchCell(cell) {
     const {binW, binH} = this.root.binSize;
-    const i = this.window.i + (cell.i - 1) * binH;
-    const j = this.window.j + (cell.j - 1) * binW;
+    const sheetI = this.window.i + (cell.i - 1) * binH + 1;
+    const sheetJ = this.window.j + (cell.j - 1) * binW + 1;
     const cursor = this.cursor;
     if (cell.type === 'meta') {
       cursor.i = 0;
       cursor.j = 0;
     } else if (cell.type === 'row') {
-      cursor.i = i;
+      cursor.i = sheetI;
       cursor.j = 0;
     } else if (cell.type === 'col') {
       cursor.i = 0;
-      cursor.j = j;
+      cursor.j = sheetJ;
     } else {
-      cursor.i = i;
-      cursor.j = j;
+      cursor.i = sheetI;
+      cursor.j = sheetJ;
     }
   }
 
@@ -78,6 +80,15 @@ export class WindowCursor {
     } else if (direction === 'up' && this.cursor.i - binH >= 0) {
       this.cursor.i -= binW;
     }
+  }
+
+  cursorToTouchIndex() {
+    const {binW, binH} = this.root.binSize;
+    return {
+      i: this.cursor.i === 0 ? 0 : Math.floor((this.cursor.i - 1) / binH) - Math.floor(this.window.i / binH) + 1,
+      j: this.cursor.j === 0 ? 0 : Math.floor((this.cursor.j - 1) / binW) - Math.floor(this.window.j / binW) + 1
+    };
+
   }
 
   moveWindow(direction, by) {
@@ -104,7 +115,6 @@ export class WindowCursor {
     const {binW, binH} = this.root.binSize;
     this.window.i -= this.window.i % binH;
     this.window.j -= this.window.j % binW;
-
 
   }
 
@@ -222,25 +232,9 @@ export class ToHABData {
     };
   }
 
-  indexOfBinnedCell({i, j}) {
-    const {binW, binH} = this.binSize;
-    return {
-      i: Math.floor(i / binH),
-      j: Math.floor(j / binW)
-    };
-  }
-
   getCursorLocation() {
-    const cursor = this.cursor;
-    const window = this.window;
-    const binnedCursor = this.indexOfBinnedCell(cursor);
-    const binnedWindowOrigin = this.indexOfBinnedCell(window);
-    console.log('getcursorloc', cursor);
-    console.log({cursor, binnedCursor, binnedWindowOrigin});
-    return {
-      i: cursor.i === 0 ? 0 : binnedCursor.i - binnedWindowOrigin.i,
-      j: cursor.j === 0 ? 0 : binnedCursor.j - binnedWindowOrigin.j
-    };
+    return this.windowCursor.cursorToTouchIndex();
+
   }
 
   getValue(cell: TouchCell) {
