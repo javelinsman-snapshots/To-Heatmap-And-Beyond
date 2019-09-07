@@ -90,16 +90,17 @@ export class WindowCursor {
 
   moveWindow(direction, by) {
     const {n, m} = this.root.numCells;
-    const {w, h} = this.root.currentWindowSize;
     const {binW, binH} = this.root.binSize;
-    if (direction === 'left' && this.window.j - by * binW >= 0) {
-      this.window.j -= by * binW;
-    } else if (direction === 'right' && this.window.j + by * binW < m) {
-      this.window.j += by * binW;
-    } else if (direction === 'up' && this.window.i - by * binH >= 0) {
-      this.window.i -= by * binH;
+    const nMax = Math.floor((n - 1) / binH);
+    const mMax = Math.floor((m - 1) / binW);
+    if (direction === 'left') {
+      this.window.j = Math.max(0, this.window.j - by * binW);
+    } else if (direction === 'right') {
+      this.window.j = Math.min(mMax, this.window.j + by * binW);
+    } else if (direction === 'up') {
+      this.window.i = Math.max(0, this.window.i - by * binH);
     } else if (direction === 'down' && this.window.i + by * binH < n) {
-      this.window.i += by * binH;
+      this.window.i = Math.min(nMax, this.window.i + by * binH);
     }
   }
 
@@ -221,11 +222,11 @@ export class ToHABData {
   }
 
   numRowCols() {
-    const { n, m } = this.numCells;
+    const { w, h } = this.currentWindowSize;
     const { binW, binH } = this.binSize;
     return {
-      numRows: Math.ceil(n / binH),
-      numCols: Math.ceil(m / binW)
+      numRows: Math.ceil(h / binH),
+      numCols: Math.ceil(w / binW)
     };
   }
 

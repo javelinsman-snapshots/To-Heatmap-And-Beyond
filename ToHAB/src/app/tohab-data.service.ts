@@ -88,7 +88,6 @@ export class ToHABDataService {
   }
 
   onInteractionDrag(evt: ToHABDragEvent) {
-    console.log(this.dragBuffer);
     this.dragBuffer.dx += evt.dx;
     this.dragBuffer.dy += evt.dy;
     const {cellW, cellH} = this.tohabData.cellSize;

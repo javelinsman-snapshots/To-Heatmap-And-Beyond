@@ -24,7 +24,6 @@ export class InteractionManagerService {
   }
 
   fireEvents(eventName: string, event: InteractionEvent) {
-    console.log(this.callbacks);
     this.callbacks[eventName].forEach(callback => callback(event));
   }
 
