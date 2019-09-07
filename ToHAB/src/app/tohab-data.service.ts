@@ -3,19 +3,16 @@ import { dataCells, colHeaders, rowHeaders } from './mock-data';
 import { HeatMapData } from './tohab-data';
 import { TouchCell } from './touch-object';
 import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent, ToHABDragEvent, ToHABModeChangeEvent, ToHABLockEvent } from './interaction-event';
+import { SpeakingService } from './speaking.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToHABDataService {
 
-  tableData;
-  callbacks;
-  dataPanelSize;
-  dragBuffer;
-  minimumCellSize = 30;
-
-  constructor() {
+  constructor(
+    private speakingService: SpeakingService
+  ) {
     this.callbacks = {};
 
     this.tableData = {
@@ -37,7 +34,8 @@ export class ToHABDataService {
         j: 0,
         windowIndex: 0,
         windowSizes: []
-      }
+      },
+      mode: 'primary'
     };
 
     this.dragBuffer = {
@@ -46,6 +44,32 @@ export class ToHABDataService {
     };
 
   }
+
+  get cellSize() {
+    const window = this.tableData.window;
+    const currentWindow = window.windowSizes[window.windowIndex];
+    const {w, h} = this.dataPanelSize;
+    return {
+      w: w / currentWindow.w,
+      h: h / currentWindow.h
+    };
+  }
+
+  get navigationMode() {
+    return this.tableData.mode;
+  }
+
+  set navigationMode(s: string) {
+    this.tableData.mode = s;
+  }
+
+  tableData;
+  callbacks;
+  dataPanelSize;
+  dragBuffer;
+  minimumCellSize = 30;
+
+  previouslyPannedCell = null;
 
   on(eventName: string, callback) {
     if (this.callbacks[eventName]) {
@@ -59,20 +83,11 @@ export class ToHABDataService {
     this.callbacks[eventName].forEach(callback => callback(event));
   }
 
-  get cellSize() {
-    const window = this.tableData.window;
-    const currentWindow = window.windowSizes[window.windowIndex];
-    const {w, h} = this.dataPanelSize;
-    return {
-      w: w / currentWindow.w,
-      h: h / currentWindow.h
-    };
-  }
 
   moveWindow(direction, by) {
     const window = this.tableData.window;
     const n = this.tableData.rows.length, m = this.tableData.columns.length;
-    const {w, h} = window.windowSizes[window.windowIndex]
+    const {w, h} = window.windowSizes[window.windowIndex];
 
     if (direction === 'left') {
       window.j = Math.max(window.j - by, 0);
@@ -146,18 +161,38 @@ export class ToHABDataService {
 
   getValue(cell: TouchCell) {
     const window = this.tableData.window;
-    return {
-      value: this.tableData.values[window.i + cell.i - 1][window.j + cell.j - 1],
-      rangeMin: this.tableData.valueRange.min,
-      rangeMax: this.tableData.valueRange.max
-    };
+    if (cell.type === 'data') {
+      return {
+        value: this.tableData.values[window.i + cell.i - 1][window.j + cell.j - 1],
+        rangeMin: this.tableData.valueRange.min,
+        rangeMax: this.tableData.valueRange.max
+      };
+    } else if (cell.type === 'row') {
+      return {
+        value: this.tableData.rows[cell.i - 1]
+      };
+    } else if (cell.type === 'col') {
+      return {
+        value: this.tableData.columns[cell.j - 1]
+      };
+    } else if (cell.type === 'meta') {
+      return {
+        value: 'This is a table'
+      };
+    }
   }
-
   onInteractionPan(cell: TouchCell) {
+    if (cell === this.previouslyPannedCell) {
+      return;
+    }
+    this.previouslyPannedCell = cell;
     const cursor = this.tableData.cursor;
     cursor.i = cell.i;
     cursor.j = cell.j;
     this.fireEvents('update-cursor', cursor);
+
+    this.retrieveCellOutput(cell);
+
   }
   onInteractionSwipe(evt: ToHABSwipeEvent) {
     const cursor = this.tableData.cursor;
@@ -185,8 +220,8 @@ export class ToHABDataService {
     console.log('onInteraction' + 'DoubleTap');
   }
   onInteractionThreeFingerSwipe(evt: ToHABModeChangeEvent) {
-    alert('3 swipe');
-    console.log('onInteraction' + 'ThreeFingerSwipe');
+    this.navigationMode = this.navigationMode === 'primary' ? 'secondary' : 'primary';
+    this.speakingService.read('Navigation mode is changed.');
   }
   onInteractionDrag(evt: ToHABDragEvent) {
     console.log(this.dragBuffer);
@@ -225,6 +260,16 @@ export class ToHABDataService {
     this.fireEvents('update-heatmap', {});
   }
 
+
+  retrieveCellOutput(cell: TouchCell) {
+    const value = this.getValue(cell).value;
+    window.navigator.vibrate(1000);
+    if (this.navigationMode === 'primary') {
+      this.speakingService.read(value + '');
+    } else {
+      this.speakingService.beep(10, cell.type === 'data' ? value : 150, 150);
+    }
+  }
 
 
 }

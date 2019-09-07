@@ -55,7 +55,8 @@ export class SpeakingService {
 
   private _makeUtterance(sentence: string, speed: 'slow' | 'normal' | 'fast' = 'fast') {
     const utt = new SpeechSynthesisUtterance(sentence);
-    utt.lang = 'ko-KR';
+    // utt.lang = 'ko-KR';
+    utt.lang = 'en-US';
     if (speed === 'slow') {
       utt.rate = 0.5;
     } else if (speed === 'normal') {
