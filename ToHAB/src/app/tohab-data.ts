@@ -48,37 +48,34 @@ export class WindowCursor {
     this.minimumCellSize = 50;
   }
 
-  moveCursorToTouchCell(cell) {
+  moveCursorToTouchCell({i, j}) {
     const {binW, binH} = this.root.binSize;
-    const sheetI = this.window.i + (cell.i - 1) * binH + 1;
-    const sheetJ = this.window.j + (cell.j - 1) * binW + 1;
-    const cursor = this.cursor;
-    if (cell.type === 'meta') {
-      cursor.i = 0;
-      cursor.j = 0;
-    } else if (cell.type === 'row') {
-      cursor.i = sheetI;
-      cursor.j = 0;
-    } else if (cell.type === 'col') {
-      cursor.i = 0;
-      cursor.j = sheetJ;
-    } else {
-      cursor.i = sheetI;
-      cursor.j = sheetJ;
-    }
+    Object.assign(this.cursor, {
+      i: i === 0 ? 0 : this.window.i + (i - 1) * binH + 1,
+      j: j === 0 ? 0 : this.window.j + (j - 1) * binW + 1
+    });
   }
 
   moveCursorTo(direction: string) {
-    const {binW, binH} = this.root.binSize;
-    const {n, m} = this.root.numCells;
-    if (direction === 'left' && this.cursor.j - binW >= 0) {
-      this.cursor.j -= binW;
-    } else if (direction === 'right' && this.cursor.j + binW < m) {
-      this.cursor.j += binW;
-    } else if (direction === 'down' && this.cursor.i + binH < n) {
-      this.cursor.i += binH;
-    } else if (direction === 'up' && this.cursor.i - binH >= 0) {
-      this.cursor.i -= binW;
+    const {i, j} = this.cursorToTouchIndex();
+    const {numRows, numCols} = this.root.numRowCols();
+
+    if (direction === 'left') {
+      this.moveCursorToTouchCell({
+        i, j: Math.max(0, j - 1)
+      });
+    } else if (direction === 'right') {
+      this.moveCursorToTouchCell({
+        i, j: Math.min(numCols, j + 1)
+      });
+    } else if (direction === 'down') {
+      this.moveCursorToTouchCell({
+        i: Math.min(numRows, i + 1), j
+      });
+    } else if (direction === 'up') {
+      this.moveCursorToTouchCell({
+        i: Math.max(0, i - 1), j
+      });
     }
   }
 
