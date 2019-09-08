@@ -37,8 +37,8 @@ export class InteractionManagerService {
 
   bindElement(element: Element) {
     const mc = new Hammer.Manager(element);
-    const singleTap = new Hammer.Tap({ event: 'single-tap', taps: 1 });
-    const doubleTap = new Hammer.Tap({ event: 'double-tap', taps: 2 });
+    const singleTap = new Hammer.Tap({ event: 'single-tap', taps: 1, time: 700 });
+    const doubleTap = new Hammer.Tap({ event: 'double-tap', taps: 2, time: 700 });
     doubleTap.recognizeWith(singleTap);
     singleTap.requireFailure(doubleTap);
     const tripleSwipe = new Hammer.Swipe({
@@ -75,6 +75,9 @@ export class InteractionManagerService {
       this.previousDoublePan = evt;
     });
     mc.on('doublepan doublepanend', evt => {
+      if (evt.maxPointers > 2) {
+        return;
+      }
       if (evt.deltaTime <= 500) {
         if (evt.type === 'doublepanend' && evt.scale < 0.5) {
           this.fireEvents('zoom', { direction: 'out' });

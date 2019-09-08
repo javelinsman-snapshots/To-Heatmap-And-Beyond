@@ -278,7 +278,9 @@ export class ToHABData {
     }
     if (numCell) {
       message += ` There are total of ${numRows * numCols} cells, ${numRows} by ${numCols},`;
-      message += ` and each cell summarizes ${binH} rows and ${binW} columns`;
+      if (Math.max(binH, binW) > 1) {
+        message += ` and each cell summarizes ${binH} rows and ${binW} columns`;
+      }
     }
     return message;
   }
