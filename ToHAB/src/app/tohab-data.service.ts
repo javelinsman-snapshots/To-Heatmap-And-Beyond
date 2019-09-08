@@ -54,8 +54,29 @@ export class ToHABDataService {
     return this.tohabData.getValue.bind(this.tohabData);
   }
 
-  onInteractionPan(cell: TouchCell) {
-    if (cell === this.previouslyPannedCell) {
+  determineCellType({i, j}) {
+    return i === 0 && j === 0 ? 'meta' :
+      i === 0 ? 'col' :
+      j === 0 ? 'row' : 'data';
+  }
+
+  movedCellIfLocked(cell: VirtualTouchCell) {
+    const cursor = this.tohabData.cursor;
+    const newCell = Object.assign({}, cell);
+    if (cursor.lock && cursor.lockI >= 0) {
+      newCell.i = cursor.lockI;
+    } else if (cursor.lock && cursor.lockJ >= 0) {
+      newCell.j = cursor.lockJ;
+    }
+    newCell.type = this.determineCellType(newCell);
+    return newCell;
+  }
+
+  onInteractionPan(cell: VirtualTouchCell) {
+    cell = this.movedCellIfLocked(cell);
+    if (this.previouslyPannedCell &&
+        cell.i === this.previouslyPannedCell.i &&
+        cell.j === this.previouslyPannedCell.j) {
       return;
     }
     this.previouslyPannedCell = cell;
@@ -72,10 +93,7 @@ export class ToHABDataService {
     const {i, j} = this.tohabData.getCursorLocation();
     const cell = {
       i, j,
-      type: i === 0 && j === 0 ? 'meta' :
-            i === 0 ? 'col' :
-            j === 0 ? 'row' :
-            'data',
+      type: this.determineCellType({i, j})
     } as VirtualTouchCell;
     return cell;
   }
@@ -92,12 +110,13 @@ export class ToHABDataService {
   }
 
   onInteractionLock(evt: ToHABLockEvent) {
+    const cell = this.currentTouchCell;
     console.log('onInteraction' + 'Lock');
     if (this.tohabData.cursor.lock) {
       this.tohabData.windowCursor.unlockCursor();
       this.descriptionService.read('The cursor is unlocked.')
     } else {
-      this.tohabData.windowCursor.lockCursor(evt.direction);
+      this.tohabData.windowCursor.lockCursor(cell, evt.direction);
       if (evt.direction === 'horizontal') {
         const lockI = this.tohabData.cursor.lockI;
         this.descriptionService.read(`The cursor is locked to row ${lockI}.`)
@@ -193,10 +212,12 @@ export class ToHABDataService {
     this.fireEvents('update-heatmap', {});
     this.descriptionService.readMessages([
       'zoom ' + evt.direction,
+      this.tohabData.cursor.lock ? 'The cursor is unlocked' : '',
       this.tohabData.descriptionOfWindow({
           row: true, col: true, numCell: true
       })
     ]);
+    this.tohabData.windowCursor.unlockCursor();
   }
 
 }
