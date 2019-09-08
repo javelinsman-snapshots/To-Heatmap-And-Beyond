@@ -10,7 +10,7 @@ export class DescriptionService {
 
   pitchDomain = {
     min: 220,
-    max: 1660
+    max: 1760
   };
 
   constructor(
@@ -24,7 +24,7 @@ export class DescriptionService {
 
   describeCell({cellType, cellValue, navigationMode}) {
     console.log({cellType, cellValue, navigationMode});
-    window.navigator.vibrate(1000);
+    window.navigator.vibrate(100);
     if (navigationMode === 'primary') {
       const {range, value, valueType, valueDomain} = cellValue;
       let description;
@@ -60,7 +60,6 @@ export class DescriptionService {
     } else {
       const {value, melody, valueDomain} = cellValue;
       if (cellType === 'data') {
-        this.speakingService.stop();
         this.speakingService.beep(10, this.convertToPitch({value, valueDomain}), 150);
       } else if (cellType === 'row' || cellType === 'col') {
         const beeps = [
