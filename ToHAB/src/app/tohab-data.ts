@@ -89,8 +89,7 @@ export class WindowCursor {
 
   }
 
-  moveWindow(direction, by) {
-    console.log(`moveWindow(${direction}, ${by})`)
+  get lastValidWindowIndex() {
     const {n, m} = this.root.numCells;
     const {binW, binH} = this.root.binSize;
     const nMax = (n % binH === 0 ? n : n - n % binH + binH) - 1;
@@ -100,9 +99,15 @@ export class WindowCursor {
     const virtualWindowH = h % binH === 0 ? h : h - h % binH + binH;
     const lastValidWindowI = Math.max(0, nMax - virtualWindowH + 1);
     const lastValidWindowJ = Math.max(0, mMax - virtualWindowW + 1);
-    console.log({n, m, binW, binH, nMax, mMax, w, h,
-      virtualWindowH, virtualWindowW,
-      lastValidWindowI, lastValidWindowJ});
+    return {
+      lastValidWindowI, lastValidWindowJ
+    }
+  }
+
+  moveWindow(direction, by) {
+    console.log(`moveWindow(${direction}, ${by})`)
+    const {binW, binH} = this.root.binSize;
+    const {lastValidWindowI, lastValidWindowJ} = this.lastValidWindowIndex;
     if (direction === 'left') {
       this.window.j = clamp(this.window.j - by * binW, 0, lastValidWindowJ);
     } else if (direction === 'right') {
@@ -121,9 +126,9 @@ export class WindowCursor {
     } else if (direction === 'out') {
       this.window.windowIndex = Math.min(this.window.windowSizes.length - 1, this.window.windowIndex + 1);
     }
-    const {binW, binH} = this.root.binSize;
-    this.window.i -= this.window.i % binH;
-    this.window.j -= this.window.j % binW;
+    const {lastValidWindowI, lastValidWindowJ} = this.lastValidWindowIndex;
+    this.window.i = clamp(this.window.i, 0, lastValidWindowI);
+    this.window.j = clamp(this.window.j, 0, lastValidWindowJ);
 
     const {w, h} = this.root.currentWindowSize;
 
