@@ -112,12 +112,16 @@ export class TouchCanvasComponent implements OnInit, AfterViewInit {
 
 
   updateCursor(evt = null) {
+    this.canvas.select('.cursor').remove();
+
     const {i, j} = this.tohabDataService.getCursorLocation();
     const cursorCell = this.touchCells.find(
       cell => cell.i === i && cell.j === j
     );
+    if (!cursorCell) {
+      return;
+    }
 
-    this.canvas.select('.cursor').remove();
     this.canvas
       .append('rect')
         .attr('x', cursorCell.x).attr('y', cursorCell.y)
