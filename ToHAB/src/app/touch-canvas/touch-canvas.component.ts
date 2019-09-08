@@ -69,7 +69,6 @@ export class TouchCanvasComponent implements OnInit, AfterViewInit {
     this.interactionManagerService.bindElement(canvasElement);
 
     this.interactionManagerService.on('pan', this.onPan.bind(this));
-    this.interactionManagerService.on('single-tap', this.onSingleTap.bind(this));
     this.tohabDataService.on('update-heatmap', this.updateHeatmap.bind(this));
     this.tohabDataService.on('update-cursor', this.updateCursor.bind(this));
     this.tohabDataService.on('update-values', this.updateValues.bind(this));
@@ -99,17 +98,6 @@ export class TouchCanvasComponent implements OnInit, AfterViewInit {
       }
     }
   }
-
-  onSingleTap(evt) {
-    const { x, y } = evt;
-    for (const cell of this.touchCells) {
-      if (cell.collide(x, y)) {
-        this.tohabDataService.onInteractionSingleTap(cell);
-        break;
-      }
-    }
-  }
-
 
   updateCursor(evt = null) {
     this.canvas.select('.cursor').remove();

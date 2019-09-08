@@ -86,7 +86,13 @@ export class TouchLine implements ITouchObject {
 */
 
 
-export class TouchCell {
+export class VirtualTouchCell {
+  type: 'meta' | 'row' | 'col' | 'data';
+  i: number;
+  j: number;
+}
+
+export class TouchCell extends VirtualTouchCell {
   type: 'meta' | 'row' | 'col' | 'data';
   x: number;
   y: number;
@@ -99,6 +105,7 @@ export class TouchCell {
   constructor(
     public info: any
   ) {
+    super();
     Object.assign(this, info);
   }
 

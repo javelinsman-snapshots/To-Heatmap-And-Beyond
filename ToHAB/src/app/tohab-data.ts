@@ -1,5 +1,5 @@
 import { rowHeaders, colHeaders, dataCells } from './mock-data';
-import { TouchCell } from './touch-object';
+import { VirtualTouchCell } from './touch-object';
 import { clamp } from 'src/utils';
 
 export interface WidthHeight {
@@ -101,11 +101,11 @@ export class WindowCursor {
     const lastValidWindowJ = Math.max(0, mMax - virtualWindowW + 1);
     return {
       lastValidWindowI, lastValidWindowJ
-    }
+    };
   }
 
   moveWindow(direction, by) {
-    console.log(`moveWindow(${direction}, ${by})`)
+    console.log(`moveWindow(${direction}, ${by})`);
     const {binW, binH} = this.root.binSize;
     const {lastValidWindowI, lastValidWindowJ} = this.lastValidWindowIndex;
     if (direction === 'left') {
@@ -264,7 +264,7 @@ export class ToHABData {
 
   }
 
-  getValue(cell: TouchCell) {
+  getValue(cell: VirtualTouchCell) {
     const window = this.window;
     const {binW, binH} = this.binSize;
     if (cell.type === 'data') {
@@ -286,16 +286,40 @@ export class ToHABData {
     } else if (cell.type === 'row') {
       const i = window.i + (cell.i - 1) * binH;
       const values = this.rows.slice(i, i + binH);
+
+      const melody = [];
+      const {w, h} = this.currentWindowSize;
+      for (let k = 1; k <= Math.ceil(w / binW); k++) {
+        melody.push(this.getValue({
+          type: 'data',
+          i: cell.i,
+          j: k
+        }));
+      }
+
       return {
         value: values.join(', '),
-        range: { i, h: values.length }
+        range: { i, h: values.length },
+        melody
       };
     } else if (cell.type === 'col') {
       const j = window.j + (cell.j - 1) * binW;
       const values = this.columns.slice(j, j + binW);
+
+      const melody = [];
+      const {w, h} = this.currentWindowSize;
+      for (let k = 1; k <= Math.ceil(h / binH); k++) {
+        melody.push(this.getValue({
+          type: 'data',
+          i: k,
+          j: cell.j
+        }));
+      }
+
       return {
         value: values.join(', '),
-        range: { j, w: values[0].length }
+        range: { j, w: values[0].length },
+        melody
       };
     } else if (cell.type === 'meta') {
       return {

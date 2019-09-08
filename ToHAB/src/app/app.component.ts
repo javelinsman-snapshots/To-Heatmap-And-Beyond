@@ -19,6 +19,7 @@ export class AppComponent implements OnInit {
     const tds = this.tohabDataService;
     this.interactionManagerService.on('swipe', tds.onInteractionSwipe.bind(tds));
     this.interactionManagerService.on('lock', tds.onInteractionLock.bind(tds));
+    this.interactionManagerService.on('single-tap', tds.onInteractionSingleTap.bind(tds));
     this.interactionManagerService.on('double-tap', tds.onInteractionDoubleTap.bind(tds));
     this.interactionManagerService.on('three-finger-swipe', tds.onInteractionThreeFingerSwipe.bind(tds));
     this.interactionManagerService.on('drag', tds.onInteractionDrag.bind(tds));

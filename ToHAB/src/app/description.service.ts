@@ -11,22 +11,22 @@ export class DescriptionService {
   pitchDomain = {
     min: 220,
     max: 1660
-  }
+  };
 
   constructor(
     private speakingService: SpeakingService
   ) { }
 
-  convertToPitch({value, valueDomain}){
+  convertToPitch({value, valueDomain}) {
     const r = (value - valueDomain.min) / (valueDomain.max - valueDomain.min);
-    return this.pitchDomain.min + (this.pitchDomain.max - this.pitchDomain.min) * r
+    return this.pitchDomain.min + (this.pitchDomain.max - this.pitchDomain.min) * r;
   }
 
   describeCell({cellType, cellValue, navigationMode}) {
-    console.log({cellType, cellValue, navigationMode})
-    const {range, value, valueType, valueDomain} = cellValue;
+    console.log({cellType, cellValue, navigationMode});
     window.navigator.vibrate(1000);
     if (navigationMode === 'primary') {
+      const {range, value, valueType, valueDomain} = cellValue;
       let description;
       if (cellType === 'data') {
         if (Math.max(range.w, range.h) > 1) {
@@ -54,18 +54,28 @@ export class DescriptionService {
       } else if (cellType === 'meta') {
         description = `
           ${value}
-        `
+        `;
       }
       this.speakingService.read(description);
     } else {
-      this.speakingService.stop();
-      this.speakingService.beep(
-        10,
-        cellType === 'data' ?
-          this.convertToPitch({value, valueDomain}) :
-          150,
-        150
-      );
+      const {value, melody, valueDomain} = cellValue;
+      if (cellType === 'data') {
+        this.speakingService.stop();
+        this.speakingService.beep(10, this.convertToPitch({value, valueDomain}), 150);
+      } else if (cellType === 'row' || cellType === 'col') {
+        const beeps = [
+          {pitch: 100, duration: 500, volume: 10},
+        ].concat(
+          melody.map(thatCellValue => ({
+            pitch: this.convertToPitch({value: thatCellValue.value, valueDomain: thatCellValue.valueDomain}),
+            duration: 150,
+            volume: 10
+          }))
+        );
+        this.speakingService.consecutiveBeep(beeps);
+      } else if (cellType === 'meta') {
+        this.speakingService.beep(10, 150, 150);
+      }
     }
   }
 

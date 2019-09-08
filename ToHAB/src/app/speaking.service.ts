@@ -8,10 +8,12 @@ export class SpeakingService {
   private audioContext: AudioContext;
   private sayTimeout;
 
-  public speak: boolean = true;
+  public speak = true;
 
   private queueSignature = 0;
   private utteranceQueue: SpeechSynthesisUtterance[] = [];
+
+  consecutiveBeepTimeout = null;
 
   timestamp: number;
 
@@ -33,7 +35,13 @@ export class SpeakingService {
     speechSynthesis.cancel();
   }
 
-  beep(volume: number, frequency: number, duration: number) {
+  beep(volume: number, frequency: number, duration: number, stopOthers= true) {
+    if (stopOthers) {
+      this.stop();
+      if (this.consecutiveBeepTimeout) {
+        clearTimeout(this.consecutiveBeepTimeout);
+      }
+    }
     const v = this.audioContext.createOscillator();
     const u = this.audioContext.createGain();
     v.connect(u);
@@ -43,6 +51,18 @@ export class SpeakingService {
     u.gain.value = volume * 0.01;
     v.start(this.audioContext.currentTime);
     v.stop(this.audioContext.currentTime + duration * 0.001);
+  }
+
+  consecutiveBeep(beeps: {volume: number, pitch: number, duration: number}[], first= true) {
+    console.log('consec', beeps);
+    if (beeps.length === 0) {
+      return;
+    } else {
+      const {volume, pitch, duration} = beeps[0];
+      this.beep(volume, pitch, duration, first);
+      this.consecutiveBeepTimeout = setTimeout(() => this.consecutiveBeep(beeps.slice(1), false), duration);
+    }
+
   }
 
   beep_error() {

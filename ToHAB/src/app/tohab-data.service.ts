@@ -95,7 +95,7 @@ export class ToHABDataService {
     console.log('onInteraction' + 'Lock');
   }
 
-  onInteractionSingleTap(cell: TouchCell) {
+  onInteractionSingleTap() {
     const cell = this.currentTouchCell;
     this.descriptionService.describeCell({
       cellType: cell.type,
