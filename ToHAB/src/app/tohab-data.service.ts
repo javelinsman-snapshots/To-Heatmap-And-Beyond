@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { TouchCell } from './touch-object';
+import { TouchCell, VirtualTouchCell } from './touch-object';
 import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent, ToHABDragEvent, ToHABModeChangeEvent, ToHABLockEvent } from './interaction-event';
 import { ToHABData } from './tohab-data';
 import { DescriptionService } from './description.service';
@@ -76,7 +76,7 @@ export class ToHABDataService {
             i === 0 ? 'col' :
             j === 0 ? 'row' :
             'data',
-    };
+    } as VirtualTouchCell;
     return cell;
   }
 
@@ -93,6 +93,19 @@ export class ToHABDataService {
 
   onInteractionLock(evt: ToHABLockEvent) {
     console.log('onInteraction' + 'Lock');
+    if (this.tohabData.cursor.lock) {
+      this.tohabData.windowCursor.unlockCursor();
+      this.descriptionService.read('The cursor is unlocked.')
+    } else {
+      this.tohabData.windowCursor.lockCursor(evt.direction);
+      if (evt.direction === 'horizontal') {
+        const lockI = this.tohabData.cursor.lockI;
+        this.descriptionService.read(`The cursor is locked to row ${lockI}.`)
+      } else {
+        const lockJ = this.tohabData.cursor.lockJ;
+        this.descriptionService.read(`The cursor is locked to column ${lockJ}.`)
+      }
+    }
   }
 
   onInteractionSingleTap() {
@@ -187,27 +200,3 @@ export class ToHABDataService {
   }
 
 }
-
-  /*
-    {volume: 10, color: headerColor, stroke: 'rgb(88,88,88)', pitch: 220, duration: 150})
-  );
-  */
-  /*
-  private makeRect(x, y, w, h, i, j) {
-    return  new TouchRectangle({
-      x, y, w, h, i, j
-    });
-    return new TouchRectangle(
-        beep, s => this.speakingService.read(s),
-        x, y, w, h, beepSpec, vibrationSpec, ttsSpec
-    );
-  }
-  */
-/*
-  const idx = this.touchObjects.indexOf(touchObj);
-  if (this.touchingObjectIndex !== idx && this.lastTouchedTimestamp + 100 < Date.now()) {
-    this.touchingObjectIndex = idx;
-    this.lastTouchedTimestamp = Date.now();
-    touchObj.notify();
-  }
-*/

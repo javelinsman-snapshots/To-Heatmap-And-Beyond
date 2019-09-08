@@ -75,32 +75,32 @@ export class InteractionManagerService {
       this.previousDoublePan = evt;
     });
     mc.on('doublepan doublepanend', evt => {
-      if (evt.deltaTime <= 700) {
+      if (evt.deltaTime <= 500) {
         if (evt.type === 'doublepanend' && evt.scale < 0.5) {
           this.fireEvents('zoom', { direction: 'out' });
         } else if (evt.type === 'doublepanend' && evt.scale > 2) {
           this.fireEvents('zoom', { direction: 'in' });
         } else if (evt.type === 'doublepanend' && evt.velocityX > 0.3 &&
             evt.offsetDirection === Hammer.DIRECTION_RIGHT && evt.distance > 10) {
-          this.fireEvents('lock', {direction: 'right'});
+          this.fireEvents('lock', {direction: 'horizontal'});
         } else if (evt.type === 'doublepanend' && evt.velocityX < -0.3 &&
             evt.offsetDirection === Hammer.DIRECTION_LEFT && evt.distance > 10) {
-          this.fireEvents('lock', {direction: 'left'});
+          this.fireEvents('lock', {direction: 'horizontal'});
         } else if (evt.type === 'doublepanend' && evt.velocityY > 0.3 &&
             evt.offsetDirection === Hammer.DIRECTION_DOWN && evt.distance > 10) {
-          this.fireEvents('lock', {direction: 'down'});
+          this.fireEvents('lock', {direction: 'vertical'});
         } else if (evt.type === 'doublepanend' && evt.velocityY < -0.3 &&
             evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
-          this.fireEvents('lock', {direction: 'up'});
+          this.fireEvents('lock', {direction: 'vertical'});
         }
+      } else {
+        this.fireEvents('drag', {
+          dx: evt.center.x - this.previousDoublePan.center.x,
+          dy: evt.center.y - this.previousDoublePan.center.y,
+          end: evt.type === 'doublepanend'
+        });
+        this.previousDoublePan = evt;
       }
-
-      this.fireEvents('drag', {
-        dx: evt.center.x - this.previousDoublePan.center.x,
-        dy: evt.center.y - this.previousDoublePan.center.y,
-        end: evt.type === 'doublepanend'
-      });
-      this.previousDoublePan = evt;
 
     });
     mc.on('three-finger-swipe', evt => this.fireEvents('three-finger-swipe', {

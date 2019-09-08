@@ -10,7 +10,7 @@ export class ToHABZoomEvent {
 }
 
 export class ToHABLockEvent {
-  direction: 'left' | 'right' | 'down' | 'up';
+  direction: 'horizontal' | 'vertical';
 }
 
 export class ToHABModeChangeEvent {

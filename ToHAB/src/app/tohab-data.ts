@@ -55,6 +55,11 @@ export class WindowCursor {
       i: i === 0 ? 0 : this.window.i + (i - 1) * binH + 1,
       j: j === 0 ? 0 : this.window.j + (j - 1) * binW + 1
     });
+
+    if (this.cursor.lock) {
+      this.cursor.i = this.cursor.lockI >= 0 ? this.cursor.lockI : this.cursor.i;
+      this.cursor.j = this.cursor.lockJ >= 0 ? this.cursor.lockJ : this.cursor.j;
+    }
   }
 
   moveCursorTo(direction: string) {
@@ -86,8 +91,23 @@ export class WindowCursor {
       i: this.cursor.i === 0 ? 0 : Math.floor((this.cursor.i - 1) / binH) - Math.floor(this.window.i / binH) + 1,
       j: this.cursor.j === 0 ? 0 : Math.floor((this.cursor.j - 1) / binW) - Math.floor(this.window.j / binW) + 1
     };
-
   }
+
+  lockCursor(direction: 'horizontal' | 'vertical') {
+    this.cursor.lock = true;
+    if (direction === 'horizontal') {
+      this.cursor.lockI = this.cursor.i;
+      this.cursor.lockJ = -1;
+    } else {
+      this.cursor.lockI = -1;
+      this.cursor.lockJ = this.cursor.j;
+    }
+  }
+
+  unlockCursor() {
+    this.cursor.lock = false;
+  }
+
 
   get lastValidWindowIndex() {
     const {n, m} = this.root.numCells;
@@ -133,7 +153,7 @@ export class WindowCursor {
     this.window.j = clamp(this.window.j, 0, lastValidWindowJ);
 
     this.boundCursorToWindow();
-
+    this.unlockCursor();
   }
 
   boundCursorToWindow() {
@@ -355,4 +375,4 @@ export class ToHABData {
     }
   }
 
-};
+}
