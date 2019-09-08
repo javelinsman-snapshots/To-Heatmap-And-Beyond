@@ -121,6 +121,16 @@ export class WindowCursor {
     this.window.i -= this.window.i % binH;
     this.window.j -= this.window.j % binW;
 
+    const {w, h} = this.root.currentWindowSize;
+
+    if (this.cursor.i > 0) {
+      this.cursor.i = clamp(this.cursor.i, this.window.i + 1, this.window.i + h);
+    }
+    if (this.cursor.j > 0) {
+      this.cursor.j = clamp(this.cursor.j, this.window.j + 1, this.window.j + w);
+    }
+    console.log(this.cursor);
+
   }
 
   updateDataPanelSize(dataPanelSize) {
