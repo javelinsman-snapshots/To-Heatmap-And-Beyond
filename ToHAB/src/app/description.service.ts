@@ -58,6 +58,7 @@ export class DescriptionService {
       }
       this.speakingService.read(description);
     } else {
+      this.speakingService.stop();
       this.speakingService.beep(
         10,
         cellType === 'data' ?

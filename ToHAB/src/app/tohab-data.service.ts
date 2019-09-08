@@ -68,9 +68,7 @@ export class ToHABDataService {
     });
   }
 
-  onInteractionSwipe(evt: ToHABSwipeEvent) {
-    this.tohabData.windowCursor.moveCursorTo(evt.direction);
-    this.fireEvents('update-cursor', this.tohabData.cursor);
+  get currentTouchCell() {
     const {i, j} = this.tohabData.getCursorLocation();
     const cell = {
       i, j,
@@ -79,6 +77,13 @@ export class ToHABDataService {
             j === 0 ? 'row' :
             'data',
     };
+    return cell;
+  }
+
+  onInteractionSwipe(evt: ToHABSwipeEvent) {
+    this.tohabData.windowCursor.moveCursorTo(evt.direction);
+    this.fireEvents('update-cursor', this.tohabData.cursor);
+    const cell = this.currentTouchCell;
     this.descriptionService.describeCell({
       cellType: cell.type,
       cellValue: this.getValue(cell),
@@ -91,12 +96,22 @@ export class ToHABDataService {
   }
 
   onInteractionSingleTap(cell: TouchCell) {
-    this.onInteractionPan(cell);
+    const cell = this.currentTouchCell;
+    this.descriptionService.describeCell({
+      cellType: cell.type,
+      cellValue: this.getValue(cell),
+      navigationMode: this.tohabData.navigationMode
+    });
   }
 
   onInteractionDoubleTap(evt: InteractionEvent) {
-    alert('double tap');
     console.log('onInteraction' + 'DoubleTap');
+    const cell = this.currentTouchCell;
+    this.descriptionService.describeCell({
+      cellType: cell.type,
+      cellValue: this.getValue(cell),
+      navigationMode: this.tohabData.navigationMode === 'primary' ? 'secondary' : 'primary'
+    });
   }
 
   onInteractionThreeFingerSwipe(evt: ToHABModeChangeEvent) {
