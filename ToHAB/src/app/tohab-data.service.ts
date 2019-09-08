@@ -71,6 +71,19 @@ export class ToHABDataService {
   onInteractionSwipe(evt: ToHABSwipeEvent) {
     this.tohabData.windowCursor.moveCursorTo(evt.direction);
     this.fireEvents('update-cursor', this.tohabData.cursor);
+    const {i, j} = this.tohabData.getCursorLocation();
+    const cell = {
+      i, j,
+      type: i === 0 && j === 0 ? 'meta' :
+            i === 0 ? 'col' :
+            j === 0 ? 'row' :
+            'data',
+    };
+    this.descriptionService.describeCell({
+      cellType: cell.type,
+      cellValue: this.getValue(cell),
+      navigationMode: this.tohabData.navigationMode
+    });
   }
 
   onInteractionLock(evt: ToHABLockEvent) {
@@ -90,7 +103,7 @@ export class ToHABDataService {
     this.tohabData.navigationMode = this.tohabData.navigationMode === 'primary' ? 'secondary' : 'primary';
     this.descriptionService.describeNavigationMode({
       navigationMode: this.tohabData.navigationMode
-    })
+    });
   }
 
   onInteractionDrag(evt: ToHABDragEvent) {

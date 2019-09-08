@@ -28,17 +28,33 @@ export class DescriptionService {
     window.navigator.vibrate(1000);
     if (navigationMode === 'primary') {
       let description;
-      if (Math.max(range.w, range.h) > 1) {
+      if (cellType === 'data') {
+        if (Math.max(range.w, range.h) > 1) {
+          description = `
+            The ${valueType} is ${Math.floor(value * 100) / 100},
+            in row ${range.i + 1} ${range.h > 1 ? 'to' + (range.i + range.h) : ''},
+            and column ${range.j + 1} ${range.w > 1 ? 'to' + (range.j + range.w) : ''}
+          `;
+        } else {
+          description = `
+            ${Math.floor(value * 100) / 100},
+            in row ${range.i + 1} and column ${range.j + 1}
+          `;
+        }
+      } else if (cellType === 'row') {
         description = `
-          The ${valueType} is ${Math.floor(value * 100) / 100},
-          in row ${range.i + 1} ${range.h > 1 ? 'to' + (range.i + range.h) : ''},
-          and column ${range.j + 1} ${range.w > 1 ? 'to' + (range.j + range.w) : ''}
+          row ${range.i + 1} ${range.h > 1 ? 'to' + (range.i + range.h) : ''},
+          ${value}
         `;
-      } else {
+      } else if (cellType === 'col') {
         description = `
-          ${Math.floor(value * 100) / 100},
-          in row ${range.i + 1} and column ${range.j + 1}
+          column ${range.j + 1} ${range.w > 1 ? 'to' + (range.j + range.w) : ''}
+          ${value}
         `;
+      } else if (cellType === 'meta') {
+        description = `
+          ${value}
+        `
       }
       this.speakingService.read(description);
     } else {
