@@ -271,7 +271,7 @@ export class ToHABData {
       const i = window.i + (cell.i - 1) * binH;
       const j = window.j + (cell.j - 1) * binW;
       const values =  this.values.slice(i, i + binH).map(row => row.slice(j, j + binW));
-      console.log({window, cell, binH, binW, i, j, values});
+      // console.log({window, cell, binH, binW, i, j, values});
       return {
         value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
         valueType: 'average',
@@ -286,6 +286,7 @@ export class ToHABData {
     } else if (cell.type === 'row') {
       const i = window.i + (cell.i - 1) * binH;
       const values = this.rows.slice(i, i + binH);
+      // console.log({window, cell, binH, binW, i, values});
 
       const melody = [];
       const {w, h} = this.currentWindowSize;
@@ -305,6 +306,7 @@ export class ToHABData {
     } else if (cell.type === 'col') {
       const j = window.j + (cell.j - 1) * binW;
       const values = this.columns.slice(j, j + binW);
+      // console.log({window, cell, binH, binW, i, values});
 
       const melody = [];
       const {w, h} = this.currentWindowSize;
@@ -318,7 +320,7 @@ export class ToHABData {
 
       return {
         value: values.join(', '),
-        range: { j, w: values[0].length },
+        range: { j, w: values.length },
         melody
       };
     } else if (cell.type === 'meta') {
