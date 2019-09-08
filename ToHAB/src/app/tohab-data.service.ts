@@ -133,19 +133,39 @@ export class ToHABDataService {
       this.tohabData.windowCursor.moveWindow('right', Math.floor(-this.dragBuffer.dx / touchCellWidth));
       this.fireEvents('update-values', {});
       this.dragBuffer.dx = 0;
+      this.descriptionService.read(
+        this.tohabData.descriptionOfWindow({
+          row: false, col: true, numCell: false
+        })
+      );
     } else if (this.dragBuffer.dx > touchCellWidth) {
       this.tohabData.windowCursor.moveWindow('left', Math.floor(this.dragBuffer.dx / touchCellWidth));
       this.fireEvents('update-values', {});
       this.dragBuffer.dx = 0;
+      this.descriptionService.read(
+        this.tohabData.descriptionOfWindow({
+          row: false, col: true, numCell: false
+        })
+      );
     }
     if (this.dragBuffer.dy < -touchCellHeight) {
       this.tohabData.windowCursor.moveWindow('down', Math.floor(-this.dragBuffer.dy / touchCellHeight));
       this.fireEvents('update-values', {});
       this.dragBuffer.dy = 0;
+      this.descriptionService.read(
+        this.tohabData.descriptionOfWindow({
+          row: true, col: false, numCell: false
+        })
+      );
     } else if (this.dragBuffer.dy > touchCellHeight) {
       this.tohabData.windowCursor.moveWindow('up', Math.floor(this.dragBuffer.dy / touchCellHeight));
       this.fireEvents('update-values', {});
       this.dragBuffer.dy = 0;
+      this.descriptionService.read(
+        this.tohabData.descriptionOfWindow({
+          row: true, col: false, numCell: false
+        })
+      );
     }
     if (evt.end) {
       this.dragBuffer = {
@@ -158,6 +178,12 @@ export class ToHABDataService {
   onInteractionZoom(evt: ToHABZoomEvent) {
     this.tohabData.windowCursor.zoomWindow(evt.direction);
     this.fireEvents('update-heatmap', {});
+    this.descriptionService.readMessages([
+      'zoom ' + evt.direction,
+      this.tohabData.descriptionOfWindow({
+          row: true, col: true, numCell: true
+      })
+    ]);
   }
 
 }

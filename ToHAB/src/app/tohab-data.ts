@@ -117,6 +117,8 @@ export class WindowCursor {
     } else if (direction === 'down') {
       this.window.i = clamp(this.window.i + by * binH, 0, lastValidWindowI);
     }
+
+    this.boundCursorToWindow();
     // console.log(this.window)
   }
 
@@ -130,16 +132,18 @@ export class WindowCursor {
     this.window.i = clamp(this.window.i, 0, lastValidWindowI);
     this.window.j = clamp(this.window.j, 0, lastValidWindowJ);
 
-    const {w, h} = this.root.currentWindowSize;
+    this.boundCursorToWindow();
 
+  }
+
+  boundCursorToWindow() {
+    const {w, h} = this.root.currentWindowSize;
     if (this.cursor.i > 0) {
       this.cursor.i = clamp(this.cursor.i, this.window.i + 1, this.window.i + h);
     }
     if (this.cursor.j > 0) {
       this.cursor.j = clamp(this.cursor.j, this.window.j + 1, this.window.j + w);
     }
-    console.log(this.cursor);
-
   }
 
   updateDataPanelSize(dataPanelSize) {
@@ -246,6 +250,25 @@ export class ToHABData {
     };
   }
 
+  descriptionOfWindow({row, col, numCell}) {
+    const {numRows, numCols} = this.numRowCols();
+    const {i, j} = this.window;
+    const {w, h} = this.currentWindowSize;
+    const {binW, binH} = this.binSize;
+    let message = '';
+    if (row) {
+      message += ` row ${i + 1} ${h > 1 ? 'to ' + (i + h) : ''}`;
+    }
+    if (col) {
+      message += ` ${row ? 'and' : ''} column ${j + 1} ${w > 1 ? 'to ' + (j + w) : ''}.`;
+    }
+    if (numCell) {
+      message += ` There are total of ${numRows * numCols} cells, ${numRows} by ${numCols},`;
+      message += ` and each cell summarizes ${binH} rows and ${binW} columns`;
+    }
+    return message;
+  }
+
   updateDataPanelSize(dataPanelSize) {
     this.windowCursor.updateDataPanelSize(dataPanelSize);
   }
@@ -325,9 +348,11 @@ export class ToHABData {
       };
     } else if (cell.type === 'meta') {
       return {
-        value: 'This is a table'
+        value: this.descriptionOfWindow({
+          row: true, col: true, numCell: true
+        })
       };
     }
   }
 
-}
+};

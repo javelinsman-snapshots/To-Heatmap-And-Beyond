@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SpeakingService } from './speaking.service';
 import { TouchCell } from './touch-object';
 import { ToHABDataService } from './tohab-data.service';
+import { ToHABData } from './tohab-data';
 
 @Injectable({
   providedIn: 'root'
@@ -30,15 +31,12 @@ export class DescriptionService {
       let description;
       if (cellType === 'data') {
         if (Math.max(range.w, range.h) > 1) {
-          description = `
-            The ${valueType} is ${Math.floor(value * 100) / 100},
-            in row ${range.i + 1} ${range.h > 1 ? 'to' + (range.i + range.h) : ''},
-            and column ${range.j + 1} ${range.w > 1 ? 'to' + (range.j + range.w) : ''}
-          `;
+          description = `${Math.floor(value * 100) / 100} is the ${valueType} of values in`;
+          description += ` row ${range.i + 1} ${range.h > 1 ? 'to ' + (range.i + range.h) : ''},`;
+          description += ` and column ${range.j + 1} ${range.w > 1 ? 'to ' + (range.j + range.w) : ''}`;
         } else {
           description = `
-            ${Math.floor(value * 100) / 100},
-            in row ${range.i + 1} and column ${range.j + 1}
+            ${Math.floor(value * 100) / 100} in row ${range.i + 1} and column ${range.j + 1}
           `;
         }
       } else if (cellType === 'row') {
@@ -85,4 +83,13 @@ export class DescriptionService {
       this.speakingService.read('Navigation mode has changed to pitch mode');
     }
   }
+
+  read(message: string) {
+    this.speakingService.read(message);
+  }
+
+  readMessages(messages: string[]) {
+    this.read(messages.join('. '));
+  }
+
 }
