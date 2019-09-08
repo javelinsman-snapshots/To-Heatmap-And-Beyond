@@ -93,12 +93,16 @@ export class WindowCursor {
     console.log(`moveWindow(${direction}, ${by})`)
     const {n, m} = this.root.numCells;
     const {binW, binH} = this.root.binSize;
-    const nMax = n % binH === 0 ? n - binH : n - n % binH;
-    const mMax = m % binW === 0 ? m - binW : m - m % binW;
+    const nMax = (n % binH === 0 ? n : n - n % binH + binH) - 1;
+    const mMax = (m % binW === 0 ? m : m - m % binW + binW) - 1;
     const {w, h} = this.root.currentWindowSize;
-    const lastValidWindowI = Math.max(0, nMax - h * binH + 1);
-    const lastValidWindowJ = Math.max(0, mMax - w * binW + 1);
-    console.log({n, m, binW, binH, nMax, mMax, w, h, lastValidWindowI, lastValidWindowJ});
+    const virtualWindowW = w % binW === 0 ? w : w - w % binW + binW;
+    const virtualWindowH = h % binH === 0 ? h : h - h % binH + binH;
+    const lastValidWindowI = Math.max(0, nMax - virtualWindowH + 1);
+    const lastValidWindowJ = Math.max(0, mMax - virtualWindowW + 1);
+    console.log({n, m, binW, binH, nMax, mMax, w, h,
+      virtualWindowH, virtualWindowW,
+      lastValidWindowI, lastValidWindowJ});
     if (direction === 'left') {
       this.window.j = clamp(this.window.j - by * binW, 0, lastValidWindowJ);
     } else if (direction === 'right') {
@@ -108,7 +112,7 @@ export class WindowCursor {
     } else if (direction === 'down') {
       this.window.i = clamp(this.window.i + by * binH, 0, lastValidWindowI);
     }
-    console.log(this.window)
+    // console.log(this.window)
   }
 
   zoomWindow(direction) {
