@@ -50,3 +50,7 @@ function distToSegmentSquared(p, v, w) {
                     y: v.y + t * (w.y - v.y) });
 }
 export function distToSegment(p, v, w) { return Math.sqrt(distToSegmentSquared(p, v, w)); }
+
+export function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}

@@ -1,5 +1,6 @@
 import { rowHeaders, colHeaders, dataCells } from './mock-data';
 import { TouchCell } from './touch-object';
+import { clamp } from 'src/utils';
 
 export interface WidthHeight {
   w: number;
@@ -89,20 +90,25 @@ export class WindowCursor {
   }
 
   moveWindow(direction, by) {
+    console.log(`moveWindow(${direction}, ${by})`)
     const {n, m} = this.root.numCells;
     const {binW, binH} = this.root.binSize;
-    const nMax = (n - 1) - (n - 1) % binH + binH;
-    const mMax = (m - 1) - (m - 1) % binW + binW;
+    const nMax = n % binH === 0 ? n - binH : n - n % binH;
+    const mMax = m % binW === 0 ? m - binW : m - m % binW;
     const {w, h} = this.root.currentWindowSize;
+    const lastValidWindowI = Math.max(0, nMax - h * binH + 1);
+    const lastValidWindowJ = Math.max(0, mMax - w * binW + 1);
+    console.log({n, m, binW, binH, nMax, mMax, w, h, lastValidWindowI, lastValidWindowJ});
     if (direction === 'left') {
-      this.window.j = Math.max(0, this.window.j - by * binW);
+      this.window.j = clamp(this.window.j - by * binW, 0, lastValidWindowJ);
     } else if (direction === 'right') {
-      this.window.j = Math.min(mMax - w, this.window.j + by * binW);
+      this.window.j = clamp(this.window.j + by * binW, 0, lastValidWindowJ);
     } else if (direction === 'up') {
-      this.window.i = Math.max(0, this.window.i - by * binH);
+      this.window.i = clamp(this.window.i - by * binH, 0, lastValidWindowI);
     } else if (direction === 'down') {
-      this.window.i = Math.min(nMax - h, this.window.i + by * binH);
+      this.window.i = clamp(this.window.i + by * binH, 0, lastValidWindowI);
     }
+    console.log(this.window)
   }
 
   zoomWindow(direction) {
@@ -169,9 +175,9 @@ export class ToHABData {
   navigationMode: 'primary' | 'secondary';
 
   constructor() {
-    this.rows = rowHeaders.concat(rowHeaders).concat(rowHeaders);
+    this.rows = rowHeaders;
     this.columns = colHeaders;
-    this.values = dataCells.concat(dataCells).concat(dataCells);
+    this.values = dataCells;
     this.valueDomain = { min: 0, max: 1100 };
     this.windowCursor = new WindowCursor(this);
     this.navigationMode = 'primary';

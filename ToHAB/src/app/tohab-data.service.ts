@@ -91,21 +91,25 @@ export class ToHABDataService {
     this.dragBuffer.dx += evt.dx;
     this.dragBuffer.dy += evt.dy;
     const {cellW, cellH} = this.tohabData.cellSize;
-    if (this.dragBuffer.dx < -cellW) {
-      this.tohabData.windowCursor.moveWindow('right', Math.floor(-this.dragBuffer.dx / cellW));
+    const {binW, binH} = this.tohabData.binSize;
+    const touchCellWidth = cellW * binW;
+    const touchCellHeight = cellH * binH;
+    console.log('onInteractionDrag', {cellW, cellH}, this.dragBuffer)
+    if (this.dragBuffer.dx < -touchCellWidth) {
+      this.tohabData.windowCursor.moveWindow('right', Math.floor(-this.dragBuffer.dx / touchCellWidth));
       this.fireEvents('update-values', {});
       this.dragBuffer.dx = 0;
-    } else if (this.dragBuffer.dx > cellW) {
-      this.tohabData.windowCursor.moveWindow('left', Math.floor(this.dragBuffer.dx / cellW));
+    } else if (this.dragBuffer.dx > touchCellWidth) {
+      this.tohabData.windowCursor.moveWindow('left', Math.floor(this.dragBuffer.dx / touchCellWidth));
       this.fireEvents('update-values', {});
       this.dragBuffer.dx = 0;
     }
-    if (this.dragBuffer.dy < -cellH) {
-      this.tohabData.windowCursor.moveWindow('down', Math.floor(-this.dragBuffer.dy / cellH));
+    if (this.dragBuffer.dy < -touchCellHeight) {
+      this.tohabData.windowCursor.moveWindow('down', Math.floor(-this.dragBuffer.dy / touchCellHeight));
       this.fireEvents('update-values', {});
       this.dragBuffer.dy = 0;
-    } else if (this.dragBuffer.dy > cellH) {
-      this.tohabData.windowCursor.moveWindow('up', Math.floor(this.dragBuffer.dy / cellH));
+    } else if (this.dragBuffer.dy > touchCellHeight) {
+      this.tohabData.windowCursor.moveWindow('up', Math.floor(this.dragBuffer.dy / touchCellHeight));
       this.fireEvents('update-values', {});
       this.dragBuffer.dy = 0;
     }
