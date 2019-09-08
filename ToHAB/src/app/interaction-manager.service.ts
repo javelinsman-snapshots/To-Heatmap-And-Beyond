@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { copyTouch, ongoingTouchIndexById, colorForTouch } from 'src/utils';
 import { InteractionEvent } from './interaction-event';
 import Hammer from 'hammerjs';
 
@@ -13,7 +12,16 @@ export class InteractionManagerService {
 
   previousDoublePan;
 
-  constructor() { }
+  constructor() {
+    // for debugging purpose
+    document.onkeypress = (event) => {
+      if (event.key === '-') {
+        this.fireEvents('zoom', { direction: 'out' });
+      } else if (event.key === '+') {
+        this.fireEvents('zoom', { direction: 'in' });
+      }
+    }
+  }
 
   on(eventName: string, callback) {
     if (this.callbacks[eventName]) {
@@ -85,14 +93,15 @@ export class InteractionManagerService {
             evt.offsetDirection === Hammer.DIRECTION_UP && evt.distance > 10) {
           this.fireEvents('lock', {direction: 'up'});
         }
-      } else if (evt.deltaTime > 700) {
-        this.fireEvents('drag', {
-          dx: evt.center.x - this.previousDoublePan.center.x,
-          dy: evt.center.y - this.previousDoublePan.center.y,
-          end: evt.type === 'doublepanend'
-        });
-        this.previousDoublePan = evt;
       }
+
+      this.fireEvents('drag', {
+        dx: evt.center.x - this.previousDoublePan.center.x,
+        dy: evt.center.y - this.previousDoublePan.center.y,
+        end: evt.type === 'doublepanend'
+      });
+      this.previousDoublePan = evt;
+
     });
     mc.on('three-finger-swipe', evt => this.fireEvents('three-finger-swipe', {
       direction: evt.direction === Hammer.DIRECTION_RIGHT ? 'right' : 'left'
