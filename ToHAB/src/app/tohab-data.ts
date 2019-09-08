@@ -197,7 +197,10 @@ export class ToHABData {
     this.rows = rowHeaders;
     this.columns = colHeaders;
     this.values = dataCells;
-    this.valueDomain = { min: 0, max: 1100 };
+    this.valueDomain = {
+      min: dataCells.map(row => row.reduce((a, b) => Math.min(a, b))).reduce((a, b) => Math.min(a, b)),
+      max: dataCells.map(row => row.reduce((a, b) => Math.max(a, b))).reduce((a, b) => Math.max(a, b))
+    };
     this.windowCursor = new WindowCursor(this);
     this.navigationMode = 'primary';
   }
@@ -271,6 +274,7 @@ export class ToHABData {
       console.log({window, cell, binH, binW, i, j, values});
       return {
         value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
+        valueType: 'average',
         range: {
           i, j, w: values[0].length, h: values.length
         },

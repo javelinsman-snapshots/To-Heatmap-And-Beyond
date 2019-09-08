@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { TouchCell } from './touch-object';
 import { InteractionEvent, ToHABSwipeEvent, ToHABZoomEvent, ToHABDragEvent, ToHABModeChangeEvent, ToHABLockEvent } from './interaction-event';
-import { SpeakingService } from './speaking.service';
 import { ToHABData } from './tohab-data';
+import { DescriptionService } from './description.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +16,7 @@ export class ToHABDataService {
 
 
   constructor(
-    private speakingService: SpeakingService
+    private descriptionService: DescriptionService
   ) {
     this.callbacks = {};
     this.tohabData = new ToHABData();
@@ -61,7 +61,11 @@ export class ToHABDataService {
     this.previouslyPannedCell = cell;
     this.tohabData.windowCursor.moveCursorToTouchCell(cell);
     this.fireEvents('update-cursor', this.tohabData.cursor);
-    this.retrieveCellOutput(cell);
+    this.descriptionService.describeCell({
+      cellType: cell.type,
+      cellValue: this.getValue(cell),
+      navigationMode: this.tohabData.navigationMode
+    });
   }
 
   onInteractionSwipe(evt: ToHABSwipeEvent) {
@@ -84,7 +88,9 @@ export class ToHABDataService {
 
   onInteractionThreeFingerSwipe(evt: ToHABModeChangeEvent) {
     this.tohabData.navigationMode = this.tohabData.navigationMode === 'primary' ? 'secondary' : 'primary';
-    this.speakingService.read('Navigation mode is changed.');
+    this.descriptionService.describeNavigationMode({
+      navigationMode: this.tohabData.navigationMode
+    })
   }
 
   onInteractionDrag(evt: ToHABDragEvent) {
@@ -94,7 +100,7 @@ export class ToHABDataService {
     const {binW, binH} = this.tohabData.binSize;
     const touchCellWidth = cellW * binW;
     const touchCellHeight = cellH * binH;
-    console.log('onInteractionDrag', {cellW, cellH}, this.dragBuffer)
+    // console.log('onInteractionDrag', {cellW, cellH}, this.dragBuffer)
     if (this.dragBuffer.dx < -touchCellWidth) {
       this.tohabData.windowCursor.moveWindow('right', Math.floor(-this.dragBuffer.dx / touchCellWidth));
       this.fireEvents('update-values', {});
@@ -125,17 +131,6 @@ export class ToHABDataService {
     this.tohabData.windowCursor.zoomWindow(evt.direction);
     this.fireEvents('update-heatmap', {});
   }
-
-  retrieveCellOutput(cell: TouchCell) {
-    const value = this.getValue(cell).value;
-    window.navigator.vibrate(1000);
-    if (this.tohabData.navigationMode === 'primary') {
-      this.speakingService.read(value + '');
-    } else {
-      this.speakingService.beep(10, cell.type === 'data' ? value as number : 150, 150);
-    }
-  }
-
 
 }
 
