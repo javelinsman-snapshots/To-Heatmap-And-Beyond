@@ -5,6 +5,7 @@ A web-based interactive navigation system that enables visually impaired people 
 To be presented at the ISS '19 demo session.  
 https://doi.org/10.1145/3343055.3360749
 
+[![Demo video](http://img.youtube.com/vi/wQ0M6Dkypuo/0.jpg)](https://www.youtube.com/watch?v=wQ0M6Dkypuo "Demo video")
 
 ## Abstract
 
