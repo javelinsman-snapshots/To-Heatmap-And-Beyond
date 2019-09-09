@@ -1,27 +1,13 @@
-# IdacTouch
+# Compatible 2D Table Navigation System for Visually Impaired Users
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.1.2.
+A web-based interactive navigation system that enables visually impaired people to explore 2D numerical tables on standard mobile touch devices.
 
-## Development server
+[Try a demo](https://kiroong.github.io/To-Heatmap-And-Beyond)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+To be presented at the ISS '19 demo session.
+https://doi.org/10.1145/3343055.3360749
 
-## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Abstract
 
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+Complex data comprehension is a hard task for visually impaired people due to the lack of viable supporting tools. We designed a web-based interactive navigation system to enable visually impaired people to explore data tables on common mobile touch devices. Users can grasp overview and query detailed information through zooming in and out of a table. We also elaborated to make interactions simple and consistent with the mainstream mobile screen readers to minimize the users' cognitive burden.
