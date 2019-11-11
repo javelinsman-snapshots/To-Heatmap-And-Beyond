@@ -312,8 +312,10 @@ export class ToHABData {
       const values =  this.values.slice(i, i + binH).map(row => row.slice(j, j + binW));
       // console.log({window, cell, binH, binW, i, j, values});
       return {
-        value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
-        valueType: 'average',
+        // value: values.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b) / values.length / values[0].length,
+        // valueType: 'average',
+        value: values.map(row => row.reduce((a, b) => Math.max(a, b))).reduce((a, b) => Math.max(a, b)),
+        valueType: 'maximum',
         range: {
           i, j, w: values[0].length, h: values.length
         },
