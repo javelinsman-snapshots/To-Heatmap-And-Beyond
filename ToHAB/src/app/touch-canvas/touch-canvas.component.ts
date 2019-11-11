@@ -133,6 +133,7 @@ export class TouchCanvasComponent implements OnInit, AfterViewInit {
       const headerColor = 'rgb(153,217,234)';
       return headerColor;
     } else {
+      return "gray"
       const { value, valueDomain } = this.tohabDataService.getValue(cell);
       return d3.interpolateViridis(
           ((value as number) - valueDomain.min) / (valueDomain.max - valueDomain.min)
